@@ -1,0 +1,27 @@
+<h3>{{ _('Prusa Slicer Thumbnails') }}</h3>
+<div class="control-group">
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="checked: settings.plugins.prusaslicerthumbnails.inline_thumbnail"> Use inline thumbnails.
+		</label>
+	</div>
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="enable:settings.plugins.prusaslicerthumbnails.inline_thumbnail, checked: settings.plugins.prusaslicerthumbnails.scale_inline_thumbnail"> Scale image.
+		</label>
+	</div>
+	<div class="controls">
+		<span class="input-append">
+			<input type="number" step="any" min="0" max="100" class="input-mini text-right" data-bind="enable:settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true && settings.plugins.prusaslicerthumbnails.scale_inline_thumbnail() == true, value: settings.plugins.prusaslicerthumbnails.inline_thumbnail_scale_value">
+			<span class="add-on">%</span>
+		</span>
+	</div>
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="enable:settings.plugins.prusaslicerthumbnails.inline_thumbnail, checked: settings.plugins.prusaslicerthumbnails.align_inline_thumbnail"> Align image.
+		</label>
+	</div>
+	<div class="controls">
+		<input type="text" class="input-small" data-bind="enable:settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true && settings.plugins.prusaslicerthumbnails.align_inline_thumbnail() == true, value: settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value">
+	</div>
+</div>

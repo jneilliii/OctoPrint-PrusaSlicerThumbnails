@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_prusaslicerthumbnails/templates *
+recursive-include octoprint_prusaslicerthumbnails/translations *
+recursive-include octoprint_prusaslicerthumbnails/static *
