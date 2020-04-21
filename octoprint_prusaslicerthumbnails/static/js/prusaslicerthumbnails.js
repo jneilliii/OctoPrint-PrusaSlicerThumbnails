@@ -16,19 +16,20 @@ $(function() {
 		self.inline_thumbnail = ko.observable();
 
 		self.filesViewModel.open_thumbnail = function(data) {
-			console.log(data);
 			if(data.name.indexOf('.gcode') > 0){
-				var thumbnail_title = data.path;
-				var thumbnail_url = '/plugin/prusaslicerthumbnails/thumbnail/' + data.path.replace('.gcode','.png');
-				self.thumbnail_url(thumbnail_url);
+				var thumbnail_title = data.path.replace('.gcode','');
+				// var thumbnail_url = '/plugin/prusaslicerthumbnails/thumbnail/' + data.path.replace('.gcode','.png');
+				// self.thumbnail_url(thumbnail_url);
+				self.thumbnail_url(data.thumbnail);
 				self.thumbnail_title(thumbnail_title);
 				$('div#prusa_thumbnail_viewer').modal("show");
 			}
 		}
 
-		self.filesViewModel.inline_thumbnail_url = function(data) {
-			return '/plugin/prusaslicerthumbnails/thumbnail/' + data.path.replace('.gcode','.png');
-		}
+/* 		self.filesViewModel.inline_thumbnail_url = function(data) {
+			// return '/plugin/prusaslicerthumbnails/thumbnail/' + data.path.replace('.gcode','.png');
+			return data.thumbnail;
+		} */
 
 		self.DEFAULT_THUMBNAIL_SCALE = "100%"
 		self.filesViewModel.thumbnailScaleValue = ko.observable(self.DEFAULT_THUMBNAIL_SCALE)
@@ -75,11 +76,11 @@ $(function() {
 
 		$(document).ready(function(){
 			let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
-			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }, visible: ($data.name.indexOf(\'.gcode\') > -1 && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
+			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 			let inline_thumbnail_template = '<div class="row-fluid inline_prusa_thumbnail" ' +
-			                                'data-bind="if: ($data.name.indexOf(\'.gcode\') > -1 && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue}">' +
-			                                '<img data-bind="attr: {src: $root.inline_thumbnail_url($data), width: $root.thumbnailScaleValue}, ' +
-			                                'visible: ($data.name.indexOf(\'.gcode\') > -1 && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
+			                                'data-bind="if: ($data.thumbnail && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue}">' +
+			                                '<img data-bind="attr: {src: $data.thumbnail, width: $root.thumbnailScaleValue}, ' +
+			                                'visible: ($data.thumbnail.length > 0 && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
 			                                'click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }" ' +
 //			                                'width="100%" ' +
 			                                'style="display: none;"/></div>'

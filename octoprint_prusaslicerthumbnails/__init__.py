@@ -7,12 +7,13 @@ import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.util
 import os
+import datetime
 
 class ThumbnailProcessor(octoprint.filemanager.util.LineProcessorStream):
 
-	def __init__(self, fileBufferedReader, thumbnail_data, path, logger):
+	def __init__(self, fileBufferedReader, path, logger):
 		super(ThumbnailProcessor, self).__init__(fileBufferedReader)
-		self._thumbnail_data = thumbnail_data
+		self._thumbnail_data = ""
 		self._collecting_data = False
 		self._logger = logger
 		self._path = path
@@ -28,16 +29,17 @@ class ThumbnailProcessor(octoprint.filemanager.util.LineProcessorStream):
 		if (len(line) != 0 and line.startswith("; thumbnail end")):
 			self._collecting_data = False
 			if len(self._thumbnail_data) > 0:
+				if os.path.exists(self._path):
+					os.remove(self._path)
 				import base64
 				with open(self._path, "wb") as fh:
 					fh.write(base64.b64decode(self._thumbnail_data))
+				self._thumbnail_data = ""
 
 		if (len(line) != 0 and self._collecting_data == True):
 			self._thumbnail_data += line.replace("; ","")
 
 		if (len(line) != 0 and line.startswith("; thumbnail begin")):
-			if os.path.exists(self._path):
-				os.remove(self._path)
 			self._collecting_data = True
 
 		line = origLine
@@ -55,7 +57,8 @@ class ThumbnailProcessor(octoprint.filemanager.util.LineProcessorStream):
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
                                   octoprint.plugin.AssetPlugin,
-                                  octoprint.plugin.TemplatePlugin):
+                                  octoprint.plugin.TemplatePlugin,
+                                  octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
 		self._fileRemovalTimer = None
@@ -63,7 +66,6 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		self._fileRemovalLastAdded = None
 		self._waitForAnalysis = False
 		self._analysis_active = False
-		self._thumbnail_data = ""
 
 	##~~ SettingsPlugin mixin
 
@@ -92,6 +94,25 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			dict(type="settings", custom_bindings=False, template="prusaslicerthumbnails_settings.jinja2"),
 		]
 
+	##~~ EventHandlerPlugin mixin
+
+	def on_event(self, event, payload):
+		if event == "FileAdded" and "gcode" in payload["type"]:
+			self._logger.info("File Added: %s" % payload["path"])
+		if event == "FileRemoved" and "gcode" in payload["type"]:
+			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode",".png")
+			if os.path.exists(thumbnail_filename):
+				os.remove(thumbnail_filename)
+		if event == "MetadataAnalysisStarted" and ".gcode" in payload["path"]:
+			self._analysis_active = True
+		if event == "MetadataAnalysisFinished" and ".gcode" in payload["path"]:
+			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode",".png")
+			if os.path.exists(thumbnail_filename):
+				thumbnail_url = "/plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
+				self._storage_interface = self._file_manager._storage(payload.get("origin", "local"))
+				self._storage_interface.set_additional_metadata(payload.get("path"), "thumbnail", thumbnail_url, overwrite=True)
+			self._analysis_active = False
+
 	##~~ preprocessor hook
 
 	def thumbnail_extractor(self, path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
@@ -99,7 +120,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			return file_object
 
 		thumbnail_filename = self.get_plugin_data_folder() + "/" + path.replace(".gcode",".png")
-		return octoprint.filemanager.util.StreamWrapper(file_object.filename, ThumbnailProcessor(file_object.stream(), self._thumbnail_data, thumbnail_filename, self._logger))
+		return octoprint.filemanager.util.StreamWrapper(file_object.filename, ThumbnailProcessor(file_object.stream(), thumbnail_filename, self._logger))
 		# return file_object
 
 	##~~ Routes hook
