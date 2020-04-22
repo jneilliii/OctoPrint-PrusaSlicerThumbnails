@@ -138,7 +138,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	def get_update_information(self):
 		return dict(
 			prusaslicerthumbnails=dict(
-				displayName="Prusa Slicer Thumbnails",
+				displayName="PrusaSlicer Thumbnails",
 				displayVersion=self._plugin_version,
 
 				# version check: github repository
@@ -152,7 +152,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			)
 		)
 
-__plugin_name__ = "Prusa Slicer Thumbnails"
+__plugin_name__ = "PrusaSlicer Thumbnails"
 __plugin_pythoncompat__ = ">=2.7,<4" # python 2 and 3
 
 def __plugin_load__():
