@@ -17,6 +17,7 @@ class ThumbnailProcessor(octoprint.filemanager.util.LineProcessorStream):
 		self._collecting_data = False
 		self._logger = logger
 		self._path = path
+		self._folder_path = os.path.dirname(path)
 
 	def process_line(self, origLine):
 		if not len(origLine):
@@ -29,6 +30,8 @@ class ThumbnailProcessor(octoprint.filemanager.util.LineProcessorStream):
 		if (len(line) != 0 and line.startswith("; thumbnail end")):
 			self._collecting_data = False
 			if len(self._thumbnail_data) > 0:
+				if not os.path.exists(self._folder_path):
+					os.makedirs(self._folder_path)
 				if os.path.exists(self._path):
 					os.remove(self._path)
 				import base64
