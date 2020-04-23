@@ -111,7 +111,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		if event == "MetadataAnalysisFinished" and ".gcode" in payload["path"]:
 			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode",".png")
 			if os.path.exists(thumbnail_filename):
-				thumbnail_url = "/plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
+				thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
 				self._storage_interface = self._file_manager._storage(payload.get("origin", "local"))
 				self._storage_interface.set_additional_metadata(payload.get("path"), "thumbnail", thumbnail_url, overwrite=True)
 			self._analysis_active = False
