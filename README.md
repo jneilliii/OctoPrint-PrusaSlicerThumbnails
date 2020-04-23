@@ -4,6 +4,8 @@ This plugin will extract the embedded thumbnails from PrusaSlicer gcode files wh
 
 The thumbnail image extracted will always be the last resolution provided in the thumbnail setting. So for example the Prusa Mini setting is `thumbnails = 16x16,220x124` so the thumbnail that will be extracted will be 220x124 pixels as seen in the screenshots below. Check the Configuration section below for additional details.
 
+**Note:** If you use the option to start printing after upload from PrusaSlicer than the thumbnail will not show up until after the print completes because of the current programming implementation. I will be working to get around this in the next version 0.0.4 release.
+
 The preview thumbnail can be shown in OctoPrint from the files list by clicking the newly added image button.
 
 ![button](screenshot_button.png)
