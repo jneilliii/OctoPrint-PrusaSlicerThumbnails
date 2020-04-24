@@ -8,8 +8,6 @@ import octoprint.filemanager.util
 import octoprint.util
 import os
 import datetime
-import re
-import base64
 from octoprint.util import to_native_str
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
@@ -52,27 +50,35 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		]
 
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
+		import re
+		import base64
 		regex = r"(?:^; thumbnail begin \d+x\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+)(?:^; thumbnail end)"
 		with open(gcode_filename,"rb") as gcode_file:
 			test_str = gcode_file.read().decode('utf-8')
 		matches = re.findall(regex, test_str, re.MULTILINE)
 		if len(matches) > 0:
+			path = os.path.dirname(thumbnail_filename)
+			if not os.path.exists(path):
+				os.makedirs(path)
 			with open(thumbnail_filename,"wb") as png_file:
 				png_file.write(base64.b64decode(matches[-1:][0].replace("; ", "").encode()))
 
 	##~~ EventHandlerPlugin mixin
 
 	def on_event(self, event, payload):
+		if event == "FolderRemoved" and payload["storage"] == "local":
+			import shutil
+			shutil.rmtree(self.get_plugin_data_folder() + "/" + payload["path"], ignore_errors=True)
 		if event in ["FileAdded","FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
 			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode",".png")
 			if os.path.exists(thumbnail_filename):
 				os.remove(thumbnail_filename)
 			if event == "FileAdded":
-				gcode_filename = self._file_manager.path_on_disk(payload.get("origin", "local"), payload["path"])
+				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
 					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
-					self._file_manager.set_additional_metadata(payload.get("origin", "local"), payload["path"], "thumbnail", thumbnail_url, overwrite=True)
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url, overwrite=True)
 
 	##~~ Routes hook
 	def route_hook(self, server_routes, *args, **kwargs):
