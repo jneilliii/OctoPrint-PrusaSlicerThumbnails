@@ -8,7 +8,6 @@ import octoprint.filemanager.util
 import octoprint.util
 import os
 import datetime
-from octoprint.util import to_native_str
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
                                   octoprint.plugin.AssetPlugin,
