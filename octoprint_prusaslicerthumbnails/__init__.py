@@ -9,55 +9,6 @@ import octoprint.util
 import os
 import datetime
 
-class ThumbnailProcessor(octoprint.filemanager.util.LineProcessorStream):
-
-	def __init__(self, fileBufferedReader, path, logger):
-		super(ThumbnailProcessor, self).__init__(fileBufferedReader)
-		self._thumbnail_data = ""
-		self._collecting_data = False
-		self._logger = logger
-		self._path = path
-		self._folder_path = os.path.dirname(path)
-
-	def process_line(self, origLine):
-		if not len(origLine):
-			return None
-
-		isBytesLineForPy3 = type(origLine) is bytes and not (type(origLine) is str)
-		line = octoprint.util.to_unicode(origLine, errors="replace")
-		line = line.lstrip()
-
-		if (len(line) != 0 and line.startswith("; thumbnail end")):
-			self._collecting_data = False
-			if len(self._thumbnail_data) > 0:
-				if not os.path.exists(self._folder_path):
-					os.makedirs(self._folder_path)
-				if os.path.exists(self._path):
-					os.remove(self._path)
-				import base64
-				with open(self._path, "wb") as fh:
-					fh.write(base64.b64decode(self._thumbnail_data))
-				self._thumbnail_data = ""
-
-		if (len(line) != 0 and self._collecting_data == True):
-			self._thumbnail_data += line.replace("; ","")
-
-		if (len(line) != 0 and line.startswith("; thumbnail begin")):
-			self._collecting_data = True
-
-		line = origLine
-
-		if (isBytesLineForPy3 and type(line) is str):
-			# line = line.encode('utf8')
-			# line = line.encode('ISO-8859-1')
-			line = octoprint.util.to_bytes(line, errors="replace")
-		else:
-			if (isBytesLineForPy3 == False):
-				# do nothing, because we don't modify the line
-				if (type(line) is unicode):
-					line = octoprint.util.to_native_str(line)
-		return line
-
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
                                   octoprint.plugin.AssetPlugin,
                                   octoprint.plugin.TemplatePlugin,
@@ -97,34 +48,36 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			dict(type="settings", custom_bindings=False, template="prusaslicerthumbnails_settings.jinja2"),
 		]
 
+	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
+		import re
+		import base64
+		regex = r"(?:^; thumbnail begin \d+x\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+)(?:^; thumbnail end)"
+		with open(gcode_filename,"rb") as gcode_file:
+			test_str = gcode_file.read().decode('utf-8')
+		matches = re.findall(regex, test_str, re.MULTILINE)
+		if len(matches) > 0:
+			path = os.path.dirname(thumbnail_filename)
+			if not os.path.exists(path):
+				os.makedirs(path)
+			with open(thumbnail_filename,"wb") as png_file:
+				png_file.write(base64.b64decode(matches[-1:][0].replace("; ", "").encode()))
+
 	##~~ EventHandlerPlugin mixin
 
 	def on_event(self, event, payload):
-		if event == "FileAdded" and "gcode" in payload["type"]:
-			self._logger.info("File Added: %s" % payload["path"])
-		if event == "FileRemoved" and "gcode" in payload["type"]:
+		if event == "FolderRemoved" and payload["storage"] == "local":
+			import shutil
+			shutil.rmtree(self.get_plugin_data_folder() + "/" + payload["path"], ignore_errors=True)
+		if event in ["FileAdded","FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
 			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode",".png")
 			if os.path.exists(thumbnail_filename):
 				os.remove(thumbnail_filename)
-		if event == "MetadataAnalysisStarted" and ".gcode" in payload["path"]:
-			self._analysis_active = True
-		if event == "MetadataAnalysisFinished" and ".gcode" in payload["path"]:
-			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode",".png")
-			if os.path.exists(thumbnail_filename):
-				thumbnail_url = "/plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
-				self._storage_interface = self._file_manager._storage(payload.get("origin", "local"))
-				self._storage_interface.set_additional_metadata(payload.get("path"), "thumbnail", thumbnail_url, overwrite=True)
-			self._analysis_active = False
-
-	##~~ preprocessor hook
-
-	def thumbnail_extractor(self, path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args, **kwargs):
-		if not octoprint.filemanager.valid_file_type(path, type="gcode"):
-			return file_object
-
-		thumbnail_filename = self.get_plugin_data_folder() + "/" + path.replace(".gcode",".png")
-		return octoprint.filemanager.util.StreamWrapper(file_object.filename, ThumbnailProcessor(file_object.stream(), thumbnail_filename, self._logger))
-		# return file_object
+			if event == "FileAdded":
+				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
+				self._extract_thumbnail(gcode_filename, thumbnail_filename)
+				if os.path.exists(thumbnail_filename):
+					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url, overwrite=True)
 
 	##~~ Routes hook
 	def route_hook(self, server_routes, *args, **kwargs):
@@ -165,7 +118,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
-		"octoprint.filemanager.preprocessor": __plugin_implementation__.thumbnail_extractor,
 		"octoprint.server.http.routes": __plugin_implementation__.route_hook
 	}
 

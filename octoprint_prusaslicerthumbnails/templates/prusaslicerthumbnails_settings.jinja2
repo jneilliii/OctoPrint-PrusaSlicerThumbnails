@@ -22,6 +22,10 @@
 		</label>
 	</div>
 	<div class="controls">
-		<input type="text" class="input-small" data-bind="enable:settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true && settings.plugins.prusaslicerthumbnails.align_inline_thumbnail() == true, value: settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value">
+		<select class="input-small" style="width: 101px;" data-bind="enable:settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true && settings.plugins.prusaslicerthumbnails.align_inline_thumbnail() == true, value: settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value">
+			<option value="left">Left</option>
+			<option value="center">Center</option>
+			<option value="right">Right</option>
+		</select>
 	</div>
 </div>
