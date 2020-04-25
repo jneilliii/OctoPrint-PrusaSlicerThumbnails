@@ -10,6 +10,7 @@ $(function() {
 
 		self.settingsViewModel = parameters[0];
 		self.filesViewModel = parameters[1];
+		self.printerStateViewModel = parameters[2];
 
 		self.thumbnail_url = ko.observable('/static/img/tentacle-20x20.png');
 		self.thumbnail_title = ko.observable('');
@@ -66,6 +67,14 @@ $(function() {
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value.subscribe(function(newValue){
 				self.filesViewModel.thumbnailAlignValue(newValue);
 			});
+
+			self.filesViewModel.listHelper.selectedItem.subscribe(function(data){
+				// remove the state panel thumbnail in case it's already there
+				$('#prusalicer_state_thumbnail').remove();
+				if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && data.thumbnail){
+					$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+data.thumbnail+'" width="100%"/>\n<hr/></div>');
+				}
+			});
 		}
 
 
@@ -89,7 +98,7 @@ $(function() {
 
 	OCTOPRINT_VIEWMODELS.push({
 		construct: PrusaslicerthumbnailsViewModel,
-		dependencies: ['settingsViewModel', 'filesViewModel'],
+		dependencies: ['settingsViewModel', 'filesViewModel', 'printerStateViewModel'],
 		elements: ['div#prusa_thumbnail_viewer']
 	});
 });
