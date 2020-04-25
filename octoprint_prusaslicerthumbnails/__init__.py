@@ -30,7 +30,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			scale_inline_thumbnail=False,
 			inline_thumbnail_scale_value="50",
 			align_inline_thumbnail=False,
-			inline_thumbnail_align_value="left"
+			inline_thumbnail_align_value="left",
+			state_panel_thumbnail=True
 		)
 
 	##~~ AssetPlugin mixin
@@ -78,6 +79,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				if os.path.exists(thumbnail_filename):
 					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url, overwrite=True)
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
 	##~~ Routes hook
 	def route_hook(self, server_routes, *args, **kwargs):

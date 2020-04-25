@@ -10,6 +10,7 @@ $(function() {
 
 		self.settingsViewModel = parameters[0];
 		self.filesViewModel = parameters[1];
+		self.printerStateViewModel = parameters[2];
 
 		self.thumbnail_url = ko.observable('/static/img/tentacle-20x20.png');
 		self.thumbnail_title = ko.observable('');
@@ -25,11 +26,6 @@ $(function() {
 				$('div#prusa_thumbnail_viewer').modal("show");
 			}
 		}
-
-/* 		self.filesViewModel.inline_thumbnail_url = function(data) {
-			// return '/plugin/prusaslicerthumbnails/thumbnail/' + data.path.replace('.gcode','.png');
-			return data.thumbnail;
-		} */
 
 		self.DEFAULT_THUMBNAIL_SCALE = "100%"
 		self.filesViewModel.thumbnailScaleValue = ko.observable(self.DEFAULT_THUMBNAIL_SCALE)
@@ -71,18 +67,25 @@ $(function() {
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value.subscribe(function(newValue){
 				self.filesViewModel.thumbnailAlignValue(newValue);
 			});
+
+			self.filesViewModel.listHelper.selectedItem.subscribe(function(data){
+				// remove the state panel thumbnail in case it's already there
+				$('#prusalicer_state_thumbnail').remove();
+				if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && data.thumbnail && data.thumbnail_src == 'prusaslicerthumbnails'){
+					$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+data.thumbnail+'" width="100%"/>\n<hr/></div>');
+				}
+			});
 		}
 
 
 		$(document).ready(function(){
 			let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
-			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
+			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 			let inline_thumbnail_template = '<div class="row-fluid inline_prusa_thumbnail" ' +
-			                                'data-bind="if: ($data.thumbnail && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue}">' +
+			                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue}">' +
 			                                '<img data-bind="attr: {src: $data.thumbnail, width: $root.thumbnailScaleValue}, ' +
-			                                'visible: ($data.thumbnail.length > 0 && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
+			                                'visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
 			                                'click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }" ' +
-//			                                'width="100%" ' +
 			                                'style="display: none;"/></div>'
 
 			$("#files_template_machinecode").text(function () {
@@ -95,7 +98,7 @@ $(function() {
 
 	OCTOPRINT_VIEWMODELS.push({
 		construct: PrusaslicerthumbnailsViewModel,
-		dependencies: ['settingsViewModel', 'filesViewModel'],
+		dependencies: ['settingsViewModel', 'filesViewModel', 'printerStateViewModel'],
 		elements: ['div#prusa_thumbnail_viewer']
 	});
 });
