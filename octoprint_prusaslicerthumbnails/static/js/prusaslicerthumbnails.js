@@ -16,11 +16,9 @@ $(function() {
 		self.thumbnail_title = ko.observable('');
 		self.inline_thumbnail = ko.observable();
 
-		self.filesViewModel.open_thumbnail = function(data) {
+		self.filesViewModel.prusaslicerthumbnails_open_thumbnail = function(data) {
 			if(data.name.indexOf('.gcode') > 0){
 				var thumbnail_title = data.path.replace('.gcode','');
-				// var thumbnail_url = '/plugin/prusaslicerthumbnails/thumbnail/' + data.path.replace('.gcode','.png');
-				// self.thumbnail_url(thumbnail_url);
 				self.thumbnail_url(data.thumbnail);
 				self.thumbnail_title(thumbnail_title);
 				$('div#prusa_thumbnail_viewer').modal("show");
@@ -70,9 +68,18 @@ $(function() {
 
 			self.filesViewModel.listHelper.selectedItem.subscribe(function(data){
 				// remove the state panel thumbnail in case it's already there
-				$('#prusalicer_state_thumbnail').remove();
-				if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && data.thumbnail && data.thumbnail_src == 'prusaslicerthumbnails'){
-					$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+data.thumbnail+'" width="100%"/>\n<hr/></div>');
+				if(data){
+					if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && data.thumbnail && data.thumbnail_src == 'prusaslicerthumbnails'){
+						if($('#prusalicer_state_thumbnail').length) {
+							$('#prusalicer_state_thumbnail').attr('src', data.thumbnail);
+						} else {
+							$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+data.thumbnail+'" width="100%"/>\n<hr/></div>');
+						}
+					} else {
+						$('#prusalicer_state_thumbnail').remove();
+					}
+				} else {
+					$('#prusalicer_state_thumbnail').remove();
 				}
 			});
 		}
@@ -80,12 +87,12 @@ $(function() {
 
 		$(document).ready(function(){
 			let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
-			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
+			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 			let inline_thumbnail_template = '<div class="row-fluid inline_prusa_thumbnail" ' +
 			                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue}">' +
 			                                '<img data-bind="attr: {src: $data.thumbnail, width: $root.thumbnailScaleValue}, ' +
 			                                'visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
-			                                'click: function() { if ($root.loginState.isUser()) { $root.open_thumbnail($data) } else { return; } }" ' +
+			                                'click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }" ' +
 			                                'style="display: none;"/></div>'
 
 			$("#files_template_machinecode").text(function () {
