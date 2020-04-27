@@ -51,6 +51,9 @@ $(function() {
 					}
 				}
 				console.log(self.crawl_results());
+				if(self.crawl_results().length == 0){
+					self.crawl_results.push({name: ko.observable('No files found needing conversion'), files: ko.observableArray([])});
+				}
 				self.filesViewModel.requestData({force: true});
 				self.crawling_files(false);
 			}).fail(function(data){

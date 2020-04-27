@@ -44,6 +44,9 @@
 		<div id="crawl_files_results" class="row-fluid" data-bind="if: crawl_results().length > 0">
 			<div class="row-fluid">Crawl Results</div>
 			<ul data-bind="foreach: { data: crawl_results, as: 'category', noChildContext: true }">
+				<!-- ko if:category.files().length == 0 -->
+				<li><span data-bind="text: category.name"></span></li>
+				<!-- /ko -->
 				<!-- ko if:category.files().length > 0 -->
 				<li><span data-bind="text: category.name"></span>:
 					<ul data-bind="foreach: { data: category.files, as: 'item', noChildContext: true }">
