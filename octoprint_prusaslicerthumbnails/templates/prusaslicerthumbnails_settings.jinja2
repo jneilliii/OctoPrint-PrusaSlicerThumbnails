@@ -34,3 +34,26 @@
 		</select>
 	</div>
 </div>
+<div class="row-fluid" data-bind="allowBindings: false">
+	<div class="row-fluid" data-bind="allowBindings: true">
+		<div id="crawl_files" class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary" data-bind="click: crawl_files, enable: !crawling_files()"><i class="fa fa-spinner fa-spin" data-bind="visible: crawling_files" style="display: none;"></i> Crawl Files</button>
+			</div>
+		</div>
+		<div id="crawl_files_results" class="row-fluid" data-bind="if: crawl_results().length > 0">
+			<div class="row-fluid">Crawl Results</div>
+			<ul data-bind="foreach: { data: crawl_results, as: 'category', noChildContext: true }">
+				<!-- ko if:category.files().length > 0 -->
+				<li><span data-bind="text: category.name"></span>:
+					<ul data-bind="foreach: { data: category.files, as: 'item', noChildContext: true }">
+						<li>
+							<span data-bind="text: item"></span>
+						</li>
+					</ul>
+				</li>
+				<!-- /ko -->
+			</ul>
+		</div>
+	</div>
+</div>

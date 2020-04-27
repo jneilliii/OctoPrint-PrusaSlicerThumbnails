@@ -12,7 +12,8 @@ import datetime
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
                                   octoprint.plugin.AssetPlugin,
                                   octoprint.plugin.TemplatePlugin,
-                                  octoprint.plugin.EventHandlerPlugin):
+                                  octoprint.plugin.EventHandlerPlugin,
+								  octoprint.plugin.SimpleApiPlugin):
 
 	def __init__(self):
 		self._fileRemovalTimer = None
@@ -80,6 +81,55 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode", ".png") + "?" + "{:%Y%m%d%H%M%S}".format(datetime.datetime.now())
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url, overwrite=True)
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
+
+	##~~ SimpleApiPlugin mixin
+
+	def _process_gcode(self, gcode_file, results=[]):
+		self._logger.debug(gcode_file["path"])
+		if gcode_file.get("children") == None:
+			self._logger.debug(gcode_file.get("thumbnail"))
+			if gcode_file.get("thumbnail") == None:
+				self._logger.debug("No Thumbnail for %s, attempting extraction" % gcode_file["path"])
+				results["no_thumbnail"].append(gcode_file["path"])
+				self.on_event("FileAdded", dict(path=gcode_file["path"],storage="local",type=["gcode"]))
+			elif "prusaslicerthumbnails" in gcode_file.get("thumbnail") and not gcode_file.get("thumbnail_src"):
+				self._logger.debug("No Thumbnail source for %s, adding" % gcode_file["path"])
+				results["no_thumbnail_src"].append(gcode_file["path"])
+				self._file_manager.set_additional_metadata("local", gcode_file["path"], "thumbnail_src", self._identifier, overwrite=True)
+		else:
+			children = gcode_file["children"]
+			for key, file in children.items():
+				self._process_gcode(children[key], results)
+		return results
+
+	def get_api_commands(self):
+		return dict(crawl_files=[])
+
+	def on_api_command(self, command, data):
+		import flask
+		import json
+		from octoprint.server import user_permission
+		if not user_permission.can():
+			return flask.make_response("Insufficient rights", 403)
+
+		if command == "crawl_files":
+			self._logger.debug("Crawling Files")
+			FileList = self._file_manager.list_files()
+			LocalFiles = FileList["local"]
+			results = dict(no_thumbnail=[],no_thumbnail_src=[])
+			for key, file in LocalFiles.items():
+				results = self._process_gcode(LocalFiles[key], results)
+				# if LocalFiles[key].get("children") == None:
+					# # self._logger.debug(LocalFiles[key].get("thumbnail"))
+					# if LocalFiles[key].get("thumbnail") == None:
+						# # self._logger.debug("No Thumbnail for %s, attempting extraction" % file["path"])
+						# results["no_thumbnail"].append(file["path"])
+						# self.on_event("FileAdded", dict(path=file["path"],storage="local",type=["gcode"]))
+					# elif "prusaslicerthumbnails" in LocalFiles[key].get("thumbnail") and not LocalFiles[key].get("thumbnail_src"):
+						# # self._logger.debug("No Thumbnail source for %s, adding" % file["path"])
+						# results["no_thumbnail_src"].append(file["path"])
+						# self._file_manager.set_additional_metadata("local", file["path"], "thumbnail_src", self._identifier, overwrite=True)
+			return flask.jsonify(results)
 
 	##~~ Routes hook
 	def route_hook(self, server_routes, *args, **kwargs):
