@@ -100,6 +100,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			children = gcode_file["children"]
 			for key, file in children.items():
 				self._process_gcode(children[key], results)
+		elif gcode_file.get("type") == "folder" and gcode_file.get("children") == None:
+			results["warning"] = True
 		return results
 
 	def get_api_commands(self):

@@ -17,6 +17,7 @@ $(function() {
 		self.inline_thumbnail = ko.observable();
 		self.crawling_files = ko.observable(false);
 		self.crawl_results = ko.observableArray([]);
+		self.show_crawl_warning = ko.observable(false);
 
 		self.filesViewModel.prusaslicerthumbnails_open_thumbnail = function(data) {
 			if(data.name.indexOf('.gcode') > 0){
@@ -45,14 +46,17 @@ $(function() {
 				}),
 				contentType: "application/json; charset=UTF-8"
 			}).done(function(data){
+				self.show_crawl_warning(false);
 				for (key in data) {
-					if(data[key].length){
-						self.crawl_results.push({name: ko.observable(key), files: ko.observableArray(data[key])})
+					if(data[key].length && data[key] !== 'warning'){
+						self.crawl_results.push({name: ko.observable(key), files: ko.observableArray(data[key])});
+					} else if(key == 'warning'){
+						self.show_crawl_warning(true);
 					}
 				}
-				console.log(self.crawl_results());
+				console.log(data);
 				if(self.crawl_results().length == 0){
-					self.crawl_results.push({name: ko.observable('No files found needing conversion'), files: ko.observableArray([])});
+					self.crawl_results.push({name: ko.observable('No convertible files found'), files: ko.observableArray([])});
 				}
 				self.filesViewModel.requestData({force: true});
 				self.crawling_files(false);
