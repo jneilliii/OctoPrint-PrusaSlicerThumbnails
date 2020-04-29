@@ -100,8 +100,29 @@ $(function() {
 				self.filesViewModel.thumbnailAlignValue(newValue);
 			});
 
-			self.filesViewModel.listHelper.selectedItem.subscribe(function(data){
-				// remove the state panel thumbnail in case it's already there
+			self.printerStateViewModel.filepath.subscribe(function(data){
+				if(data && typeof self.printerStateViewModel.sd() !== 'undefined'){
+					OctoPrint.files.get('local',data)
+						.done(function(file_data){
+							if(file_data){
+								if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && file_data.thumbnail && file_data.thumbnail_src == 'prusaslicerthumbnails'){
+									if($('#prusalicer_state_thumbnail').length) {
+										$('#prusalicer_state_thumbnail > img').attr('src', file_data.thumbnail);
+									} else {
+										$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+file_data.thumbnail+'" width="100%"/>\n<hr/></div>');
+									}
+								} else {
+									$('#prusalicer_state_thumbnail').remove();
+								}
+							}
+						})
+						.fail(function(file_data){
+							console.log('Error getting file information for "'+data+'"');
+						});
+				}
+			});
+
+/* 			self.filesViewModel.listHelper.selectedItem.subscribe(function(data){
 				if(data){
 					if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && data.thumbnail && data.thumbnail_src == 'prusaslicerthumbnails'){
 						if($('#prusalicer_state_thumbnail').length) {
@@ -115,7 +136,7 @@ $(function() {
 				} else {
 					$('#prusalicer_state_thumbnail').remove();
 				}
-			});
+			}); */
 		}
 
 
