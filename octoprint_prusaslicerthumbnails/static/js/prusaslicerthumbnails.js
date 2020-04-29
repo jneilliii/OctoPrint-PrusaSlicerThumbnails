@@ -121,22 +121,6 @@ $(function() {
 						});
 				}
 			});
-
-/* 			self.filesViewModel.listHelper.selectedItem.subscribe(function(data){
-				if(data){
-					if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && data.thumbnail && data.thumbnail_src == 'prusaslicerthumbnails'){
-						if($('#prusalicer_state_thumbnail').length) {
-							$('#prusalicer_state_thumbnail > img').attr('src', data.thumbnail);
-						} else {
-							$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+data.thumbnail+'" width="100%"/>\n<hr/></div>');
-						}
-					} else {
-						$('#prusalicer_state_thumbnail').remove();
-					}
-				} else {
-					$('#prusalicer_state_thumbnail').remove();
-				}
-			}); */
 		}
 
 
