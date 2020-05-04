@@ -56,7 +56,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		regex = r"(?:^; thumbnail begin \d+x\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+)(?:^; thumbnail end)"
 		with open(gcode_filename,"rb") as gcode_file:
 			test_str = gcode_file.read().decode('utf-8')
-		test_str = test_str.replace(b'\r\n',b'\n')
+		test_str = test_str.replace(octoprint.util.to_native_str('\r\n'),octoprint.util.to_native_str('\n'))
 		matches = re.findall(regex, test_str, re.MULTILINE)
 		if len(matches) > 0:
 			path = os.path.dirname(thumbnail_filename)
