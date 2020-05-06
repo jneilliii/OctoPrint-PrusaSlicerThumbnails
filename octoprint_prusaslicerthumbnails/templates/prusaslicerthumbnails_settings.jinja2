@@ -44,7 +44,6 @@
 		<div id="crawl_files_results" class="row-fluid" data-bind="if: crawl_results().length > 0">
 			<div class="alert alert-block">
 				<h4>Scan Results</h4>
-				<div class="muted" data-bind="if: show_crawl_warning()"><small><span class="label label-important">Warning: </span> Currently the scan is only able to process the root folder and first level of sub-folders.</small></div>
 				<ul class="unstyled" data-bind="foreach: { data: crawl_results, as: 'category', noChildContext: true }">
 					<!-- ko if:category.files().length == 0 -->
 					<li><span data-bind="text: category.name" class="label label-success"></span></li>

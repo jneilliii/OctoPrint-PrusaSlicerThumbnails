@@ -101,8 +101,6 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			children = gcode_file["children"]
 			for key, file in children.items():
 				self._process_gcode(children[key], results)
-		elif gcode_file.get("type") == "folder" and gcode_file.get("children") == None:
-			results["warning"] = True
 		return results
 
 	def get_api_commands(self):
@@ -117,21 +115,12 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 
 		if command == "crawl_files":
 			self._logger.debug("Crawling Files")
-			FileList = self._file_manager.list_files()
+			FileList = self._file_manager.list_files(recursive=True)
+			self._logger.info(FileList)
 			LocalFiles = FileList["local"]
 			results = dict(no_thumbnail=[],no_thumbnail_src=[])
 			for key, file in LocalFiles.items():
 				results = self._process_gcode(LocalFiles[key], results)
-				# if LocalFiles[key].get("children") == None:
-					# # self._logger.debug(LocalFiles[key].get("thumbnail"))
-					# if LocalFiles[key].get("thumbnail") == None:
-						# # self._logger.debug("No Thumbnail for %s, attempting extraction" % file["path"])
-						# results["no_thumbnail"].append(file["path"])
-						# self.on_event("FileAdded", dict(path=file["path"],storage="local",type=["gcode"]))
-					# elif "prusaslicerthumbnails" in LocalFiles[key].get("thumbnail") and not LocalFiles[key].get("thumbnail_src"):
-						# # self._logger.debug("No Thumbnail source for %s, adding" % file["path"])
-						# results["no_thumbnail_src"].append(file["path"])
-						# self._file_manager.set_additional_metadata("local", file["path"], "thumbnail_src", self._identifier, overwrite=True)
 			return flask.jsonify(results)
 
 	##~~ Routes hook
