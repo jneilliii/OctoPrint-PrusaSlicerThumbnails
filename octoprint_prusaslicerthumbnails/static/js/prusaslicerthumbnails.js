@@ -101,7 +101,7 @@ $(function() {
 			});
 
 			self.printerStateViewModel.filepath.subscribe(function(data){
-				if(data && typeof self.printerStateViewModel.sd() !== 'undefined'){
+				if(data){
 					OctoPrint.files.get('local',data)
 						.done(function(file_data){
 							if(file_data){
@@ -117,7 +117,9 @@ $(function() {
 							}
 						})
 						.fail(function(file_data){
-							console.log('Error getting file information for "'+data+'"');
+							if($('#prusalicer_state_thumbnail').length) {
+								$('#prusalicer_state_thumbnail').remove();
+							}
 						});
 				}
 			});
