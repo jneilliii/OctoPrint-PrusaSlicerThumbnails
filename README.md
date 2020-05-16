@@ -1,5 +1,7 @@
 # PrusaSlicer Thumbnails
 
+![GitHub Downloads](https://badgen.net/github/assets-dl/jneilliii/OctoPrint-PrusaSlicerThumbnails/)
+
 This plugin will extract the embedded thumbnails from PrusaSlicer gcode files where the printer's profile ini file has the thumbnail option configured. This is default behavior for the Prusa Mini printer profile. 
 
 The thumbnail image extracted will always be the last resolution provided in the thumbnail setting. So for example the Prusa Mini setting is `thumbnails = 16x16,220x124` so the thumbnail that will be extracted will be 220x124 pixels as seen in the screenshots below. Check the Configuration section below for additional details.

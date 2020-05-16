@@ -54,8 +54,20 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		import re
 		import base64
 		regex = r"(?:^; thumbnail begin \d+x\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+)(?:^; thumbnail end)"
+		lineNum = 0
+		collectedString = ""
 		with open(gcode_filename,"rb") as gcode_file:
-			test_str = gcode_file.read().decode('utf-8')
+			for line in gcode_file:
+				lineNum += 1
+				gcode = octoprint.util.comm.gcode_command_for_cmd(line)
+				extrusionMatch = octoprint.util.comm.regexes_parameters["floatE"].search(line)
+				if gcode == "G1" and extrusionMatch:
+					self._logger.debug("Line %d: Detected first extrusion. Read complete.", lineNum)
+					break
+				if line.startswith(";") or line.startswith("\n"):
+					collectedString += line
+			self._logger.debug(collectedString)
+			test_str = collectedString
 		test_str = test_str.replace(octoprint.util.to_native_str('\r\n'),octoprint.util.to_native_str('\n'))
 		matches = re.findall(regex, test_str, re.MULTILINE)
 		if len(matches) > 0:
@@ -148,7 +160,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				current=self._plugin_version,
 
 				# update method: pip
-				pip="https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/{target_version}.zip"
+				pip="https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/releases/latest/download/{target_version}.zip"
 			)
 		)
 
