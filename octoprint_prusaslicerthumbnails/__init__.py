@@ -59,6 +59,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		with open(gcode_filename,"rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
+				line = line.decode("utf-8", "ignore")
 				gcode = octoprint.util.comm.gcode_command_for_cmd(line)
 				extrusionMatch = octoprint.util.comm.regexes_parameters["floatE"].search(line)
 				if gcode == "G1" and extrusionMatch:
@@ -67,8 +68,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				if line.startswith(";") or line.startswith("\n"):
 					collectedString += line
 			self._logger.debug(collectedString)
-			test_str = collectedString
-		test_str = test_str.replace(octoprint.util.to_native_str('\r\n'),octoprint.util.to_native_str('\n'))
+			test_str = collectedString.replace(octoprint.util.to_native_str('\r\n'),octoprint.util.to_native_str('\n'))
+		test_str = test_str.replace(octoprint.util.to_native_str(';\n;\n'),octoprint.util.to_native_str(';\n\n;\n'))
 		matches = re.findall(regex, test_str, re.MULTILINE)
 		if len(matches) > 0:
 			path = os.path.dirname(thumbnail_filename)
