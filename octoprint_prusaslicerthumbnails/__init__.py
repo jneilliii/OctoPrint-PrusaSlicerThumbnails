@@ -171,7 +171,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				],
 
 				# update method: pip
-				pip="https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/releases/latest/download/{target_version}.zip"
+				pip="https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/releases/archive/{target_version}.zip"
 			)
 		)
 
