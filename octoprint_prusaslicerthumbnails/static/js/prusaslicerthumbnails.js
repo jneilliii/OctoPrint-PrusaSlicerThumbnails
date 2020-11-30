@@ -104,7 +104,7 @@ $(function() {
 									if($('#prusalicer_state_thumbnail').length) {
 										$('#prusalicer_state_thumbnail > img').attr('src', file_data.thumbnail);
 									} else {
-										$('#state > div > hr:nth-child(4)').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+file_data.thumbnail+'" width="100%"/>\n<hr/></div>');
+										$('#state > div > hr:first').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+file_data.thumbnail+'" width="100%"/>\n<hr/></div>');
 									}
 								} else {
 									$('#prusalicer_state_thumbnail').remove();
