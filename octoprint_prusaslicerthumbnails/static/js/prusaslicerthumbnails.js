@@ -89,6 +89,9 @@ $(function() {
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_scale_value.subscribe(function(newValue){
 				self.filesViewModel.thumbnailScaleValue(newValue + "%");
 			});
+			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value.subscribe(function(newValue){
+				$('#prusaslicer_state_thumbnail > img').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'})
+			});
 
 			// observe alignment changes
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.align_inline_thumbnail.subscribe(function(newValue){
