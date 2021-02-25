@@ -101,19 +101,19 @@ $(function() {
 						.done(function(file_data){
 							if(file_data){
 								if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && file_data.thumbnail && file_data.thumbnail_src == 'prusaslicerthumbnails'){
-									if($('#prusalicer_state_thumbnail').length) {
-										$('#prusalicer_state_thumbnail > img').attr('src', file_data.thumbnail);
+									if($('#prusaslicer_state_thumbnail').length) {
+										$('#prusaslicer_state_thumbnail > img').attr('src', file_data.thumbnail);
 									} else {
-										$('#state > div > hr:first').after('<div id="prusalicer_state_thumbnail" class="row-fluid"><img src="'+file_data.thumbnail+'" width="100%"/>\n<hr/></div>');
+										$('#state > div > hr:first').after('<div id="prusaslicer_state_thumbnail" class="row-fluid"><img src="'+file_data.thumbnail+'" width="100%"/>\n<hr/></div>');
 									}
 								} else {
-									$('#prusalicer_state_thumbnail').remove();
+									$('#prusaslicer_state_thumbnail').remove();
 								}
 							}
 						})
 						.fail(function(file_data){
-							if($('#prusalicer_state_thumbnail').length) {
-								$('#prusalicer_state_thumbnail').remove();
+							if($('#prusaslicer_state_thumbnail').length) {
+								$('#prusaslicer_state_thumbnail').remove();
 							}
 						});
 				}
