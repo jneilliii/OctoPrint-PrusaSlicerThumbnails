@@ -4,9 +4,12 @@
 		<h3 data-bind="text: thumbnail_title()"></h3>
 	</div>
 	<div class="modal-body">
-		<img data-bind="attr: {src: thumbnail_url()}" width="100%"/>
+        <div class="row-fluid">
+            <img data-bind="attr: {src: thumbnail_url()}" width="100%"/>
+        </div>
+
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn btn-primary" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
+		<a href="#" class="btn pull-left" aria-hidden="true" data-bind="visible: filesViewModel.loginState.hasPermissionKo(filesViewModel.access.permissions.PRINT), click: function() { if (filesViewModel.enableSelectAndPrint(file_details())) { filesViewModel.loadFile(file_details(), true); $('div#prusa_thumbnail_viewer').modal('hide'); } else { return; } }, css: {disabled: !filesViewModel.enableSelectAndPrint(file_details())}"><i class="fas fa-print"></i> {{ _('Print') }}</a> <a href="#" class="btn btn-primary pull-right" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
 	</div>
 </div>

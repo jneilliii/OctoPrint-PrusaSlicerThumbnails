@@ -32,7 +32,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			inline_thumbnail_scale_value="50",
 			align_inline_thumbnail=False,
 			inline_thumbnail_align_value="left",
-			state_panel_thumbnail=True
+			state_panel_thumbnail=True,
+			state_panel_thumbnail_scale_value="75",
+			resize_filelist=False,
+			filelist_height="306"
 		)
 
 	##~~ AssetPlugin mixin

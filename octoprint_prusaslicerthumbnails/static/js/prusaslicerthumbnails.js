@@ -15,6 +15,7 @@ $(function() {
 		self.thumbnail_url = ko.observable('/static/img/tentacle-20x20.png');
 		self.thumbnail_title = ko.observable('');
 		self.inline_thumbnail = ko.observable();
+		self.file_details = ko.observable();
 		self.crawling_files = ko.observable(false);
 		self.crawl_results = ko.observableArray([]);
 
@@ -23,6 +24,7 @@ $(function() {
 				var thumbnail_title = data.path.replace('.gcode','');
 				self.thumbnail_url(data.thumbnail);
 				self.thumbnail_title(thumbnail_title);
+				self.file_details(data);
 				$('div#prusa_thumbnail_viewer').modal("show");
 			}
 		}
@@ -71,6 +73,11 @@ $(function() {
 				self.filesViewModel.thumbnailAlignValue(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value());
 			}
 
+			// assign initial filelist height
+            if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.resize_filelist()) {
+                $('#files > div > div.gcode_files > div.scroll-wrapper').css({'height': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.filelist_height() + 'px'});
+            }
+
 			// observe scaling changes
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.scale_inline_thumbnail.subscribe(function(newValue){
 				if (newValue == false){
@@ -95,6 +102,13 @@ $(function() {
 				self.filesViewModel.thumbnailAlignValue(newValue);
 			});
 
+			// observe file list height changes
+			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.filelist_height.subscribe(function(newValue){
+				if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.resize_filelist()) {
+                    $('#files > div > div.gcode_files > div.scroll-wrapper').css({'height': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.filelist_height() + 'px'});
+                }
+			});
+
 			self.printerStateViewModel.filepath.subscribe(function(data){
 				if(data){
 					OctoPrint.files.get('local',data)
@@ -104,7 +118,7 @@ $(function() {
 									if($('#prusaslicer_state_thumbnail').length) {
 										$('#prusaslicer_state_thumbnail > img').attr('src', file_data.thumbnail);
 									} else {
-										$('#state > div > hr:first').after('<div id="prusaslicer_state_thumbnail" class="row-fluid"><img src="'+file_data.thumbnail+'" width="100%"/>\n<hr/></div>');
+										$('#state > div > hr:first').after('<div id="prusaslicer_state_thumbnail" class="row-fluid" style="text-align: center"><img src="'+file_data.thumbnail+'" width="' + self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%"/>\n<hr/></div>');
 									}
 								} else {
 									$('#prusaslicer_state_thumbnail').remove();

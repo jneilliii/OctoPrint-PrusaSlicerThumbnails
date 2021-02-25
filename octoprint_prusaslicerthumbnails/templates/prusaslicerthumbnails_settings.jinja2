@@ -6,6 +6,12 @@
 		</label>
 	</div>
 	<div class="controls">
+		<span class="input-append">
+			<input type="number" step="any" min="0" max="100" class="input-mini text-right" data-bind="enable:settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() == true, value: settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value">
+			<span class="add-on">%</span>
+		</span>
+	</div>
+	<div class="controls">
 		<label class="checkbox">
 		<input type="checkbox" data-bind="checked: settings.plugins.prusaslicerthumbnails.inline_thumbnail"> Use inline thumbnails.
 		</label>
@@ -32,6 +38,17 @@
 			<option value="center">Center</option>
 			<option value="right">Right</option>
 		</select>
+	</div>
+	<div class="controls">
+		<label class="checkbox">
+		<input type="checkbox" data-bind="checked: settings.plugins.prusaslicerthumbnails.resize_filelist"> Set file list height.
+		</label>
+	</div>
+	<div class="controls">
+		<span class="input-append">
+			<input type="number" step="any" min="0" class="input-mini text-right" data-bind="enable: settings.plugins.prusaslicerthumbnails.resize_filelist() == true, value: settings.plugins.prusaslicerthumbnails.filelist_height">
+			<span class="add-on">px</span>
+		</span>
 	</div>
 </div>
 <div class="row-fluid" data-bind="allowBindings: false">
