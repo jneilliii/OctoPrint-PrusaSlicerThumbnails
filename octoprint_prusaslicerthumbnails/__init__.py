@@ -34,7 +34,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			align_inline_thumbnail=False,
 			inline_thumbnail_align_value="left",
 			state_panel_thumbnail=True,
-			state_panel_thumbnail_scale_value="75",
+			state_panel_thumbnail_scale_value="100",
 			resize_filelist=False,
 			filelist_height="306",
 			scale_inline_thumbnail_position=False

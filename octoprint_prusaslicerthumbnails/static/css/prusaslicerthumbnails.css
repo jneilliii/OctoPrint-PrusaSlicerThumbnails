@@ -11,10 +11,14 @@
 	overflow: hidden;
 }
 
-#files .gcode_files .entry img {
+#files .gcode_files .entry img, #prusaslicer_state_thumbnail img {
 	width: auto;
 }
 
-.inline_prusa_thumbnail.pull-left {
+.inline_prusa_thumbnail.pull-left, #prusaslicer_state_thumbnail.pull-left {
 	padding-right: 5px;
+}
+
+#prusaslicer_state_thumbnail.pull-left img {
+	width: 100%;
 }

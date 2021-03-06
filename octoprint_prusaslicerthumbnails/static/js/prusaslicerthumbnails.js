@@ -98,7 +98,7 @@ $(function() {
 				self.filesViewModel.thumbnailScaleValue(newValue + "%");
 			});
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value.subscribe(function(newValue){
-				$('#prusaslicer_state_thumbnail > img').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'})
+				$('#prusaslicer_state_thumbnail').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'})
 			});
 
 			// observe alignment changes
@@ -132,9 +132,9 @@ $(function() {
 							if(file_data){
 								if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && file_data.thumbnail && file_data.thumbnail_src == 'prusaslicerthumbnails'){
 									if($('#prusaslicer_state_thumbnail').length) {
-										$('#prusaslicer_state_thumbnail > img').attr('src', file_data.thumbnail);
+										$('#prusaslicer_state_thumbnail').attr('src', file_data.thumbnail);
 									} else {
-										$('#state > div > hr:first').after('<div id="prusaslicer_state_thumbnail" class="row-fluid" style="text-align: center"><img src="'+file_data.thumbnail+'" width="' + self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%"/>\n<hr/></div>');
+									    $('#state > div > hr:first').after('<img id="prusaslicer_state_thumbnail" class="pull-left" src="'+file_data.thumbnail+'" width="' + self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%"/>');
 									}
 								} else {
 									$('#prusaslicer_state_thumbnail').remove();
