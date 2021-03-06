@@ -29,11 +29,14 @@ $(function() {
 			}
 		}
 
-		self.DEFAULT_THUMBNAIL_SCALE = "100%"
-		self.filesViewModel.thumbnailScaleValue = ko.observable(self.DEFAULT_THUMBNAIL_SCALE)
+		self.DEFAULT_THUMBNAIL_SCALE = "100%";
+		self.filesViewModel.thumbnailScaleValue = ko.observable(self.DEFAULT_THUMBNAIL_SCALE);
 
-		self.DEFAULT_THUMBNAIL_ALIGN = "left"
-		self.filesViewModel.thumbnailAlignValue = ko.observable(self.DEFAULT_THUMBNAIL_ALIGN)
+		self.DEFAULT_THUMBNAIL_ALIGN = "left";
+		self.filesViewModel.thumbnailAlignValue = ko.observable(self.DEFAULT_THUMBNAIL_ALIGN);
+
+        self.DEFAULT_THUMBNAIL_POSITION = false;
+		self.filesViewModel.thumbnailPositionLeft = ko.observable(self.DEFAULT_THUMBNAIL_POSITION);
 
 		self.crawl_files = function(){
 			self.crawling_files(true);
@@ -78,6 +81,11 @@ $(function() {
                 $('#files > div > div.gcode_files > div.scroll-wrapper').css({'height': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.filelist_height() + 'px'});
             }
 
+            // assign initial position
+            if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_position_left()==true) {
+                self.filesViewModel.thumbnailPositionLeft(true);
+            }
+
 			// observe scaling changes
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.scale_inline_thumbnail.subscribe(function(newValue){
 				if (newValue == false){
@@ -103,6 +111,11 @@ $(function() {
 			});
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_align_value.subscribe(function(newValue){
 				self.filesViewModel.thumbnailAlignValue(newValue);
+			});
+
+			// observe position changes
+            self.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail_position_left.subscribe(function(newValue){
+				self.filesViewModel.thumbnailPositionLeft(newValue);
 			});
 
 			// observe file list height changes
@@ -141,9 +154,10 @@ $(function() {
 		$(document).ready(function(){
 			let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
 			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
-			let inline_thumbnail_template = '<div class="row-fluid inline_prusa_thumbnail" ' +
-			                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue}">' +
-			                                '<img data-bind="attr: {src: $data.thumbnail, width: $root.thumbnailScaleValue}, ' +
+
+			let inline_thumbnail_template = '<div class="inline_prusa_thumbnail" ' +
+			                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue, \'width\': $root.thumbnailScaleValue}, css: {\'row-fluid\': !$root.thumbnailPositionLeft(), \'pull-left\': $root.thumbnailPositionLeft()}">' +
+			                                '<img data-bind="attr: {src: $data.thumbnail}, ' +
 			                                'visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
 			                                'click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }" ' +
 			                                'style="display: none;"/></div>'
