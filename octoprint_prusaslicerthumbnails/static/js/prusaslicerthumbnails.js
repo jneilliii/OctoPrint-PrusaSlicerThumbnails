@@ -156,10 +156,11 @@ $(function() {
 			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 
 			let inline_thumbnail_template = '<div class="inline_prusa_thumbnail" ' +
-			                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue, \'width\': $root.thumbnailScaleValue}, css: {\'row-fluid\': !$root.thumbnailPositionLeft(), \'pull-left\': $root.thumbnailPositionLeft()}">' +
+			                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), style: {\'text-align\': $root.thumbnailAlignValue, \'width\': ($root.thumbnailPositionLeft()) ? $root.thumbnailScaleValue() : \'100%\'}, css: {\'row-fluid\': !$root.thumbnailPositionLeft(), \'pull-left\': $root.thumbnailPositionLeft()}">' +
 			                                '<img data-bind="attr: {src: $data.thumbnail}, ' +
 			                                'visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
-			                                'click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }" ' +
+			                                'click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } },' +
+                                            'style: {\'width\': (!$root.thumbnailPositionLeft()) ? $root.thumbnailScaleValue() : \'100%\' }" ' +
 			                                'style="display: none;"/></div>'
 
 			$("#files_template_machinecode").text(function () {
