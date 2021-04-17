@@ -143,9 +143,9 @@ $(function() {
                 }
 			});
 
-			self.printerStateViewModel.filepath.subscribe(function(data){
+			self.printerStateViewModel.dateString.subscribe(function(data){
 				if(data){
-					OctoPrint.files.get('local',data)
+					OctoPrint.files.get('local',self.printerStateViewModel.filepath())
 						.done(function(file_data){
 							if(file_data){
 								if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() && file_data.thumbnail && file_data.thumbnail_src == 'prusaslicerthumbnails'){
@@ -164,7 +164,9 @@ $(function() {
 								$('#prusaslicer_state_thumbnail').remove();
 							}
 						});
-				}
+				} else {
+				    $('#prusaslicer_state_thumbnail').remove();
+                }
 			});
 		}
 	}
