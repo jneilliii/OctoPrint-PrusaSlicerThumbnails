@@ -53,7 +53,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
 		import re
 		import base64
-		regex = r"(?:^; thumbnail begin \d+x\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
+		regex = r"(?:^; thumbnail begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
 		lineNum = 0
 		collectedString = ""
 		with open(gcode_filename,"rb") as gcode_file:
