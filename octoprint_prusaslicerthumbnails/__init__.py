@@ -22,6 +22,9 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		self._fileRemovalTimer = None
 		self._fileRemovalLastDeleted = None
 		self._fileRemovalLastAdded = None
+		self._folderRemovalTimer = None
+		self._folderRemovalLastDeleted = {}
+		self._folderRemovalLastAdded = {}
 		self._waitForAnalysis = False
 		self._analysis_active = False
 
@@ -142,9 +145,18 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	##~~ EventHandlerPlugin mixin
 
 	def on_event(self, event, payload):
+		if event not in ["FileAdded", "FileRemoved", "FolderRemoved", "FolderAdded"]:
+			return
 		if event == "FolderRemoved" and payload["storage"] == "local":
 			import shutil
 			shutil.rmtree(self.get_plugin_data_folder() + "/" + payload["path"], ignore_errors=True)
+		if event == "FolderAdded" and payload["storage"] == "local":
+			file_list = self._file_manager.list_files(path=payload["path"], recursive=True)
+			local_files = file_list["local"]
+			results = dict(no_thumbnail=[], no_thumbnail_src=[])
+			for file_key, file in local_files.items():
+				results = self._process_gcode(local_files[file_key], results)
+			self._logger.debug("Scan results: {}".format(results))
 		if event in ["FileAdded", "FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
 			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode", ".png")
 			if os.path.exists(thumbnail_filename):
@@ -167,7 +179,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		self._logger.debug(gcode_file["path"])
 		if gcode_file.get("type") == "machinecode":
 			self._logger.debug(gcode_file.get("thumbnail"))
-			if gcode_file.get("thumbnail") == None:
+			if gcode_file.get("thumbnail") is None or not os.path.exists(gcode_file.get("thumbnail").split("?")[0]):
 				self._logger.debug("No Thumbnail for %s, attempting extraction" % gcode_file["path"])
 				results["no_thumbnail"].append(gcode_file["path"])
 				self.on_event("FileAdded", dict(path=gcode_file["path"], storage="local", type=["gcode"]))
@@ -218,7 +230,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	def get_update_information(self):
 		return dict(
 			prusaslicerthumbnails=dict(
-				displayName="PrusaSlicer Thumbnails",
+				displayName="Slicer Thumbnails",
 				displayVersion=self._plugin_version,
 
 				# version check: github repository
@@ -243,7 +255,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		)
 
 
-__plugin_name__ = "PrusaSlicer Thumbnails"
+__plugin_name__ = "Slicer Thumbnails"
 __plugin_pythoncompat__ = ">=2.7,<4"  # python 2 and 3
 
 
