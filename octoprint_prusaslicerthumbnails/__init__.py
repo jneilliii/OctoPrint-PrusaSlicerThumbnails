@@ -71,6 +71,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			test_str = collectedString.replace(octoprint.util.to_native_str('\r\n'),octoprint.util.to_native_str('\n'))
 		test_str = test_str.replace(octoprint.util.to_native_str(';\n;\n'),octoprint.util.to_native_str(';\n\n;\n'))
 		matches = re.findall(regex, test_str, re.MULTILINE)
+		if len(matches) <= 0:
+			#Cura doesn't add the x between the size
+			regex = r"(?:^; thumbnail begin \d x\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
+			matches = re.findall(regex, test_str, re.MULTILINE)
 		if len(matches) > 0:
 			path = os.path.dirname(thumbnail_filename)
 			if not os.path.exists(path):
