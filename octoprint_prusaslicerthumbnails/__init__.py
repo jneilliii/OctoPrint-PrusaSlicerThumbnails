@@ -10,6 +10,8 @@ import os
 import datetime
 import io
 from PIL import Image
+import re
+import base64
 
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
@@ -27,8 +29,9 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		self._folderRemovalLastAdded = {}
 		self._waitForAnalysis = False
 		self._analysis_active = False
+		self.regex_extension = re.compile("\.(?:gco(?:de)?|tft)$")
 
-	##~~ SettingsPlugin mixin
+	# ~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
 		return dict(
@@ -46,7 +49,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			scale_inline_thumbnail_position=False
 		)
 
-	##~~ AssetPlugin mixin
+	# ~~ AssetPlugin mixin
 
 	def get_assets(self):
 		return dict(
@@ -54,7 +57,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			css=["css/prusaslicerthumbnails.css"]
 		)
 
-	##~~ TemplatePlugin mixin
+	# ~~ TemplatePlugin mixin
 
 	def get_template_configs(self):
 		return [
@@ -62,8 +65,6 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		]
 
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
-		import re
-		import base64
 		regex = r"(?:^; thumbnail begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
 		regex_mks = re.compile('(?:;(?:simage|;gimage):).*?M10086 ;[\r\n]', re.DOTALL)
 		lineNum = 0
@@ -142,7 +143,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		# Image not found
 		return None
 
-	##~~ EventHandlerPlugin mixin
+	# ~~ EventHandlerPlugin mixin
 
 	def on_event(self, event, payload):
 		if event not in ["FileAdded", "FileRemoved", "FolderRemoved", "FolderAdded"]:
@@ -158,22 +159,19 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				results = self._process_gcode(local_files[file_key], results)
 			self._logger.debug("Scan results: {}".format(results))
 		if event in ["FileAdded", "FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
-			thumbnail_filename = self.get_plugin_data_folder() + "/" + payload["path"].replace(".gcode", ".png")
+			thumbnail_path = self.regex_extension.sub(".png", payload["path"])
+			thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
 			if os.path.exists(thumbnail_filename):
 				os.remove(thumbnail_filename)
 			if event == "FileAdded":
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/" + payload["path"].replace(".gcode",
-																										".png") + "?" + "{:%Y%m%d%H%M%S}".format(
-						datetime.datetime.now())
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail",
-															   thumbnail_url.replace("//", "/"), overwrite=True)
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src",
-															   self._identifier, overwrite=True)
+					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path, datetime.datetime.now())
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
-	##~~ SimpleApiPlugin mixin
+	# ~~ SimpleApiPlugin mixin
 
 	def _process_gcode(self, gcode_file, results=[]):
 		self._logger.debug(gcode_file["path"])
@@ -199,7 +197,6 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_api_command(self, command, data):
 		import flask
-		import json
 		from octoprint.server import user_permission
 		if not user_permission.can():
 			return flask.make_response("Insufficient rights", 403)
@@ -214,9 +211,17 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				results = self._process_gcode(LocalFiles[key], results)
 			return flask.jsonify(results)
 
-	##~~ Routes hook
+	# ~~ extension_tree hook
+	def get_extension_tree(self, *args, **kwargs):
+		return dict(
+			machinecode=dict(
+				gcode=["tft"]
+			)
+		)
+
+	# ~~ Routes hook
 	def route_hook(self, server_routes, *args, **kwargs):
-		from octoprint.server.util.tornado import LargeResponseHandler, UrlProxyHandler, path_validation_factory
+		from octoprint.server.util.tornado import LargeResponseHandler, path_validation_factory
 		from octoprint.util import is_hidden_path
 		return [
 			(r"thumbnail/(.*)", LargeResponseHandler, dict(path=self.get_plugin_data_folder(),
@@ -225,7 +230,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 															   lambda path: not is_hidden_path(path), status_code=404)))
 		]
 
-	##~~ Softwareupdate hook
+	# ~~ Softwareupdate hook
 
 	def get_update_information(self):
 		return dict(
@@ -266,5 +271,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+		"octoprint.filemanager.extension_tree": __plugin_implementation__.get_extension_tree,
 		"octoprint.server.http.routes": __plugin_implementation__.route_hook
 	}
