@@ -42,7 +42,7 @@ A post-processing script has been bundled since version 4.9. For older versions 
 
 ### Simplify3D
 
-Available as a post-processing script for [windows](https://github.com/boweeble/s3d-thumbnail-generator) or [linux](https://github.com/NotExpectedYet/s3d-thumbnail-generator) thanks to [@boweeble](https://github.com/boweeble/) and [@NotExpectedYet](https://github.com/NotExpectedYet/).
+Available as a post-processing script for [windows](https://github.com/boweeble/s3d-thumbnail-generator),  [linux](https://github.com/NotExpectedYet/s3d-thumbnail-generator), or [macos](https://github.com/idcrook/s3d-thumbnail-generator-macos) thanks to [@boweeble](https://github.com/boweeble/), [@NotExpectedYet](https://github.com/NotExpectedYet/), and [@idcrook](https://github.com/idcrook/).
 
 ## Get Help
 
