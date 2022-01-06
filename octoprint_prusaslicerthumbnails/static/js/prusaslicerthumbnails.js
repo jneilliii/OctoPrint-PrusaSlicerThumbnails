@@ -67,7 +67,8 @@ $(function() {
 
 		self.onBeforeBinding = function() {
 		    // inject filelist thumbnail into template
-            let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
+
+      let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
 			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 
 			let inline_thumbnail_template = '<div class="inline_prusa_thumbnail" ' +
@@ -77,6 +78,7 @@ $(function() {
 			                                'click: function() { if ($root.loginState.isUser() && !($(\'html\').attr(\'id\') === \'touch\')) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } },' +
                                             'style: {\'width\': (!$root.thumbnailPositionLeft()) ? $root.thumbnailScaleValue() : \'100%\' }" ' +
 			                                'style="display: none;"/></div>';
+
 
 			$("#files_template_machinecode").text(function () {
 				var return_value = inline_thumbnail_template + $(this).text();
@@ -117,6 +119,7 @@ $(function() {
 			});
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value.subscribe(function(newValue){
 				$('#prusaslicer_state_thumbnail').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'});
+
 			});
 
 			// observe alignment changes
@@ -169,6 +172,7 @@ $(function() {
                 }
 			});
 		};
+
 	}
 
 	OCTOPRINT_VIEWMODELS.push({

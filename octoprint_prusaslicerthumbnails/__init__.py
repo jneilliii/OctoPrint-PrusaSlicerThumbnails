@@ -134,6 +134,16 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				# Return size and trimmed string
 				return (200, 200), image[9:]
 
+
+		# Check for simage
+		for image in gcode_encoded_images:
+			if image.startswith(';simage:'):
+				# Return size and trimmed string
+				return (100, 100), image[8:]
+
+		# Image not found
+		return None
+
 		# Check for simage
 		for image in gcode_encoded_images:
 			if image.startswith(';simage:'):
@@ -161,6 +171,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		if event in ["FileAdded", "FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
 			thumbnail_path = self.regex_extension.sub(".png", payload["path"])
 			thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
+
 			if os.path.exists(thumbnail_filename):
 				os.remove(thumbnail_filename)
 			if event == "FileAdded":
