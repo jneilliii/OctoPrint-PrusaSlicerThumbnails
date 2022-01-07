@@ -13,6 +13,11 @@ from PIL import Image
 import re
 import base64
 
+try:
+	from urllib import quote_plus
+except ImportError:
+	from urllib.parse import quote_plus
+
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 								  octoprint.plugin.AssetPlugin,
@@ -169,6 +174,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				results = self._process_gcode(local_files[file_key], results)
 			self._logger.debug("Scan results: {}".format(results))
 		if event in ["FileAdded", "FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
+			thumbnail_name = self.regex_extension.sub(".png", payload["name"])
 			thumbnail_path = self.regex_extension.sub(".png", payload["path"])
 			thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
 
@@ -178,7 +184,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path, datetime.datetime.now())
+					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote_plus(thumbnail_name)), datetime.datetime.now())
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
