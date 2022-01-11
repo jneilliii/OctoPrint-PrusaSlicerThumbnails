@@ -14,9 +14,9 @@ import re
 import base64
 
 try:
-	from urllib import quote_plus
+	from urllib import quote
 except ImportError:
-	from urllib.parse import quote_plus
+	from urllib.parse import quote
 
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
@@ -184,7 +184,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote_plus(thumbnail_name)), datetime.datetime.now())
+					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
