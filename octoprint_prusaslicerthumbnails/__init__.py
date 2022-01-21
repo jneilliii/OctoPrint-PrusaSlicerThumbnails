@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import flask
 import octoprint.plugin
 import octoprint.filemanager
 import octoprint.filemanager.util
@@ -13,10 +14,14 @@ from PIL import Image
 import re
 import base64
 
+from flask_babel import gettext
+from octoprint.access import ADMIN_GROUP
+from octoprint.access.permissions import Permissions
+
 try:
-	from urllib import quote
+	from urllib import quote, unquote
 except ImportError:
-	from urllib.parse import quote
+	from urllib.parse import quote, unquote
 
 
 class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
@@ -26,6 +31,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 								  octoprint.plugin.SimpleApiPlugin):
 
 	def __init__(self):
+		self.file_scanner = None
+		self.syncing = False
 		self._fileRemovalTimer = None
 		self._fileRemovalLastDeleted = None
 		self._fileRemovalLastAdded = None
@@ -39,34 +46,22 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	# ~~ SettingsPlugin mixin
 
 	def get_settings_defaults(self):
-		return dict(
-			installed=True,
-			inline_thumbnail=False,
-			scale_inline_thumbnail=False,
-			inline_thumbnail_scale_value="50",
-			inline_thumbnail_position_left=False,
-			align_inline_thumbnail=False,
-			inline_thumbnail_align_value="left",
-			state_panel_thumbnail=True,
-			state_panel_thumbnail_scale_value="100",
-			resize_filelist=False,
-			filelist_height="306",
-			scale_inline_thumbnail_position=False
-		)
+		return {'installed': True, 'inline_thumbnail': False, 'scale_inline_thumbnail': False,
+				'inline_thumbnail_scale_value': "50", 'inline_thumbnail_position_left': False,
+				'align_inline_thumbnail': False, 'inline_thumbnail_align_value': "left", 'state_panel_thumbnail': True,
+				'state_panel_thumbnail_scale_value': "100", 'resize_filelist': False, 'filelist_height': "306",
+				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False}
 
 	# ~~ AssetPlugin mixin
 
 	def get_assets(self):
-		return dict(
-			js=["js/prusaslicerthumbnails.js"],
-			css=["css/prusaslicerthumbnails.css"]
-		)
+		return {'js': ["js/prusaslicerthumbnails.js"], 'css': ["css/prusaslicerthumbnails.css"]}
 
 	# ~~ TemplatePlugin mixin
 
 	def get_template_configs(self):
 		return [
-			dict(type="settings", custom_bindings=False, template="prusaslicerthumbnails_settings.jinja2"),
+			{'type': "settings", 'custom_bindings': False, 'template': "prusaslicerthumbnails_settings.jinja2"},
 		]
 
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
@@ -80,8 +75,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				lineNum += 1
 				line = line.decode("utf-8", "ignore")
 				gcode = octoprint.util.comm.gcode_command_for_cmd(line)
-				extrusionMatch = octoprint.util.comm.regexes_parameters["floatE"].search(line)
-				if gcode == "G1" and extrusionMatch:
+				extrusion_match = octoprint.util.comm.regexes_parameters["floatE"].search(line)
+				if gcode == "G1" and extrusion_match:
 					self._logger.debug("Line %d: Detected first extrusion. Read complete.", lineNum)
 					break
 				if line.startswith(";") or line.startswith("\n") or line.startswith("M10086 ;"):
@@ -139,16 +134,6 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				# Return size and trimmed string
 				return (200, 200), image[9:]
 
-
-		# Check for simage
-		for image in gcode_encoded_images:
-			if image.startswith(';simage:'):
-				# Return size and trimmed string
-				return (100, 100), image[8:]
-
-		# Image not found
-		return None
-
 		# Check for simage
 		for image in gcode_encoded_images:
 			if image.startswith(';simage:'):
@@ -173,7 +158,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			for file_key, file in local_files.items():
 				results = self._process_gcode(local_files[file_key], results)
 			self._logger.debug("Scan results: {}".format(results))
-		if event in ["FileAdded", "FileRemoved"] and payload["storage"] == "local" and "gcode" in payload["type"]:
+		if event in ["FileAdded", "FileRemoved"] and payload["storage"] == "local" and "gcode" in payload[
+			"type"] and payload.get("name", False):
 			thumbnail_name = self.regex_extension.sub(".png", payload["name"])
 			thumbnail_path = self.regex_extension.sub(".png", payload["path"])
 			thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
@@ -184,20 +170,26 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
+					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(
+						thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail",
+															   thumbnail_url.replace("//", "/"), overwrite=True)
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src",
+															   self._identifier, overwrite=True)
 
 	# ~~ SimpleApiPlugin mixin
 
-	def _process_gcode(self, gcode_file, results=[]):
+	def _process_gcode(self, gcode_file, results=None):
+		if results is None:
+			results = []
 		self._logger.debug(gcode_file["path"])
 		if gcode_file.get("type") == "machinecode":
 			self._logger.debug(gcode_file.get("thumbnail"))
-			if gcode_file.get("thumbnail") is None or not os.path.exists(gcode_file.get("thumbnail").split("?")[0]):
+			if gcode_file.get("thumbnail") is None or not os.path.exists("{}/{}".format(self.get_plugin_data_folder(), self.regex_extension.sub(".png", gcode_file["path"]))):
 				self._logger.debug("No Thumbnail for %s, attempting extraction" % gcode_file["path"])
 				results["no_thumbnail"].append(gcode_file["path"])
-				self.on_event("FileAdded", dict(path=gcode_file["path"], storage="local", type=["gcode"]))
+				self.on_event("FileAdded", {'path': gcode_file["path"], 'storage': "local", 'type': ["gcode"],
+											'name': gcode_file["name"]})
 			elif "prusaslicerthumbnails" in gcode_file.get("thumbnail") and not gcode_file.get("thumbnail_src"):
 				self._logger.debug("No Thumbnail source for %s, adding" % gcode_file["path"])
 				results["no_thumbnail_src"].append(gcode_file["path"])
@@ -214,19 +206,22 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 
 	def on_api_command(self, command, data):
 		import flask
-		from octoprint.server import user_permission
-		if not user_permission.can():
+		if not Permissions.PLUGIN_PRUSASLICERTHUMBNAILS_SCAN.can():
 			return flask.make_response("Insufficient rights", 403)
 
 		if command == "crawl_files":
-			self._logger.debug("Crawling Files")
-			FileList = self._file_manager.list_files(recursive=True)
-			self._logger.info(FileList)
-			LocalFiles = FileList["local"]
-			results = dict(no_thumbnail=[], no_thumbnail_src=[])
-			for key, file in LocalFiles.items():
-				results = self._process_gcode(LocalFiles[key], results)
-			return flask.jsonify(results)
+			return flask.jsonify(self.scan_files())
+
+	def scan_files(self):
+		self._logger.debug("Crawling Files")
+		file_list = self._file_manager.list_files(recursive=True)
+		self._logger.info(file_list)
+		local_files = file_list["local"]
+		results = dict(no_thumbnail=[], no_thumbnail_src=[])
+		for key, file in local_files.items():
+			results = self._process_gcode(local_files[key], results)
+		self.file_scanner = None
+		return results
 
 	# ~~ extension_tree hook
 	def get_extension_tree(self, *args, **kwargs):
@@ -241,40 +236,41 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		from octoprint.server.util.tornado import LargeResponseHandler, path_validation_factory
 		from octoprint.util import is_hidden_path
 		return [
-			(r"thumbnail/(.*)", LargeResponseHandler, dict(path=self.get_plugin_data_folder(),
-														   as_attachment=False,
-														   path_validation=path_validation_factory(
-															   lambda path: not is_hidden_path(path), status_code=404)))
+			(r"thumbnail/(.*)", LargeResponseHandler,
+			 {'path': self.get_plugin_data_folder(), 'as_attachment': False, 'path_validation': path_validation_factory(
+				 lambda path: not is_hidden_path(path), status_code=404)})
+		]
+
+	# ~~ Server API Before Request Hook
+
+	def hook_octoprint_server_api_before_request(self, *args, **kwargs):
+		return [self.update_file_list]
+
+	def update_file_list(self):
+		if self._settings.get_boolean(["sync_on_refresh"]) and flask.request.path.startswith(
+				'/api/files') and flask.request.method == 'GET' and not self.file_scanner:
+			from threading import Thread
+			self.file_scanner = Thread(target=self.scan_files, daemon=True)
+			self.file_scanner.start()
+
+	# ~~ Access Permissions Hook
+
+	def get_additional_permissions(self, *args, **kwargs):
+		return [
+			{'key': "SCAN", 'name': "Scan Files", 'description': gettext("Allows access to scan files."),
+			 'roles': ["admin"], 'dangerous': True, 'default_groups': [ADMIN_GROUP]}
 		]
 
 	# ~~ Softwareupdate hook
 
 	def get_update_information(self):
-		return dict(
-			prusaslicerthumbnails=dict(
-				displayName="Slicer Thumbnails",
-				displayVersion=self._plugin_version,
-
-				# version check: github repository
-				type="github_release",
-				user="jneilliii",
-				repo="OctoPrint-PrusaSlicerThumbnails",
-				current=self._plugin_version,
-				stable_branch=dict(
-					name="Stable", branch="master", comittish=["master"]
-				),
-				prerelease_branches=[
-					dict(
-						name="Release Candidate",
-						branch="rc",
-						comittish=["rc", "master"],
-					)
-				],
-
-				# update method: pip
-				pip="https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/{target_version}.zip"
-			)
-		)
+		return {'prusaslicerthumbnails': {'displayName': "Slicer Thumbnails", 'displayVersion': self._plugin_version,
+										  'type': "github_release", 'user': "jneilliii",
+										  'repo': "OctoPrint-PrusaSlicerThumbnails", 'current': self._plugin_version,
+										  'stable_branch': {'name': "Stable", 'branch': "master",
+															'comittish': ["master"]}, 'prerelease_branches': [
+				{'name': "Release Candidate", 'branch': "rc", 'comittish': ["rc", "master"]}
+			], 'pip': "https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/{target_version}.zip"}}
 
 
 __plugin_name__ = "Slicer Thumbnails"
@@ -289,5 +285,7 @@ def __plugin_load__():
 	__plugin_hooks__ = {
 		"octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
 		"octoprint.filemanager.extension_tree": __plugin_implementation__.get_extension_tree,
-		"octoprint.server.http.routes": __plugin_implementation__.route_hook
+		"octoprint.server.http.routes": __plugin_implementation__.route_hook,
+		"octoprint.server.api.before_request": __plugin_implementation__.hook_octoprint_server_api_before_request,
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
 	}
