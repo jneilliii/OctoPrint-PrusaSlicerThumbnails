@@ -90,6 +90,13 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			if len(matches) > 0:
 				use_mks = True
 		if len(matches) > 0:
+			maxlen=0
+			choosen=-1
+			for i in range(len(matches)):
+				curlen=len(matches[i])
+				if maxlen<curlen:
+					maxlen=curlen
+					choosen=i
 			path = os.path.dirname(thumbnail_filename)
 			if not os.path.exists(path):
 				os.makedirs(path)
@@ -97,7 +104,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				if use_mks:
 					png_file.write(self._extract_mks_thumbnail(matches))
 				else:
-					png_file.write(base64.b64decode(matches[-1:][0].replace("; ", "").encode()))
+					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
 
 	# Extracts a thumbnail from a gcode and returns png binary string
 	def _extract_mks_thumbnail(self, gcode_encoded_images):
