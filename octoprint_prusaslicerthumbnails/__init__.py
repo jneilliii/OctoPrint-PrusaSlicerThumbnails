@@ -67,9 +67,11 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
 		regex = r"(?:^; thumbnail begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
 		regex_mks = re.compile('(?:;(?:simage|;gimage):).*?M10086 ;[\r\n]', re.DOTALL)
+		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
 		lineNum = 0
 		collectedString = ""
 		use_mks = False
+		use_weedo = False
 		with open(gcode_filename, "rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
@@ -79,7 +81,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				if gcode == "G1" and extrusion_match:
 					self._logger.debug("Line %d: Detected first extrusion. Read complete.", lineNum)
 					break
-				if line.startswith(";") or line.startswith("\n") or line.startswith("M10086 ;"):
+				if line.startswith(";") or line.startswith("\n") or line.startswith("M10086 ;") or line[0:4] in ["W220", "W221", "W222"]:
 					collectedString += line
 			self._logger.debug(collectedString)
 			test_str = collectedString.replace(octoprint.util.to_native_str('\r\n'), octoprint.util.to_native_str('\n'))
@@ -89,6 +91,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			matches = regex_mks.findall(test_str)
 			if len(matches) > 0:
 				use_mks = True
+		if len(matches) == 0:  # Weedo fallback
+			matches = regex_weedo.findall(test_str)
+			if len(matches) > 0:
+				use_weedo = True
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
@@ -103,8 +109,16 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			with open(thumbnail_filename, "wb") as png_file:
 				if use_mks:
 					png_file.write(self._extract_mks_thumbnail(matches))
+				elif use_weedo:
+					png_file.write(self._extract_weedo_thumbnail(matches))
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
+
+	# Extracts a thumbnail from hex binary data usd by Weedo printers
+	def _extract_weedo_thumbnail(self, gcode_encoded_images):
+		encoded_image = gcode_encoded_images[0].replace('W220 ', '').replace('\n', '').replace('\r', '').replace(' ', '')
+		encoded_image = bytes(bytearray.fromhex(encoded_image))
+		return encoded_image
 
 	# Extracts a thumbnail from a gcode and returns png binary string
 	def _extract_mks_thumbnail(self, gcode_encoded_images):
