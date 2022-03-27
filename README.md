@@ -44,6 +44,12 @@ A post-processing script has been bundled since version 4.9. For older versions 
 
 Available as a post-processing script for [windows](https://github.com/boweeble/s3d-thumbnail-generator),  [linux](https://github.com/NotExpectedYet/s3d-thumbnail-generator), or [macos](https://github.com/idcrook/s3d-thumbnail-generator-macos) thanks to [@boweeble](https://github.com/boweeble/), [@NotExpectedYet](https://github.com/NotExpectedYet/), and [@idcrook](https://github.com/idcrook/).
 
+### IdeaMaker
+
+Available since version 2.4.1: Users can enable GCode Thumbnails for OctoPrint and Mainsail under “Printer Settings” -> “Advanced”.
+
+![IdeaMaker](screenshot_ideamaker.png)
+
 ## Get Help
 
 If you experience issues with this plugin or need assistance please use the issue tracker by clicking issues above.
