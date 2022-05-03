@@ -22,7 +22,7 @@ $(function() {
 		self.filesViewModel.prusaslicerthumbnails_open_thumbnail = function(data) {
 			if(data.name.indexOf('.gcode') > 0){
 				var thumbnail_title = data.path.replace('.gcode','');
-				self.thumbnail_url(data.thumbnail);
+				self.thumbnail_url(encodeURI(data.thumbnail));
 				self.thumbnail_title(thumbnail_title);
 				self.file_details(data);
 				$('div#prusa_thumbnail_viewer').modal("show");
