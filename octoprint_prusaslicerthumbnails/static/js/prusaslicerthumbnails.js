@@ -20,14 +20,14 @@ $(function() {
 		self.crawl_results = ko.observableArray([]);
 
 		self.filesViewModel.prusaslicerthumbnails_open_thumbnail = function(data) {
-			if(data.name.indexOf('.gcode') > 0){
-				var thumbnail_title = data.path.replace('.gcode','');
+			if(data.thumbnail_src === "prusaslicerthumbnails"){
+				var thumbnail_title = data.name.replace(/\.(?:gco(?:de)?|tft)$/,'');
 				self.thumbnail_url(encodeURI(data.thumbnail));
 				self.thumbnail_title(thumbnail_title);
 				self.file_details(data);
 				$('div#prusa_thumbnail_viewer').modal("show");
 			}
-		}
+		};
 
 		self.DEFAULT_THUMBNAIL_SCALE = "100%";
 		self.filesViewModel.thumbnailScaleValue = ko.observable(self.DEFAULT_THUMBNAIL_SCALE);
@@ -55,19 +55,20 @@ $(function() {
 						self.crawl_results.push({name: ko.observable(key), files: ko.observableArray(data[key])});
 					}
 				}
-				if(self.crawl_results().length == 0){
+				if(self.crawl_results().length === 0){
 					self.crawl_results.push({name: ko.observable('No convertible files found'), files: ko.observableArray([])});
 				}
 				self.filesViewModel.requestData({force: true});
 				self.crawling_files(false);
 			}).fail(function(data){
 				self.crawling_files(false);
-			})
-		}
+			});
+		};
 
 		self.onBeforeBinding = function() {
-		    // inject filelist thumpnail into template
-            let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
+		    // inject filelist thumbnail into template
+
+      let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
 			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 
 			let inline_thumbnail_template = '<div class="inline_prusa_thumbnail" ' +
@@ -76,12 +77,13 @@ $(function() {
 			                                'visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == true), ' +
 			                                'click: function() { if ($root.loginState.isUser() && !($(\'html\').attr(\'id\') === \'touch\')) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } },' +
                                             'style: {\'width\': (!$root.thumbnailPositionLeft()) ? $root.thumbnailScaleValue() : \'100%\' }" ' +
-			                                'style="display: none;"/></div>'
+			                                'style="display: none;"/></div>';
+
 
 			$("#files_template_machinecode").text(function () {
 				var return_value = inline_thumbnail_template + $(this).text();
 				return_value = return_value.replace(regex, '<div class="btn-group action-buttons">$1	' + template + '></div>');
-				return return_value
+				return return_value;
 			});
 
 			// assign initial scaling
@@ -116,7 +118,8 @@ $(function() {
 				self.filesViewModel.thumbnailScaleValue(newValue + "%");
 			});
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value.subscribe(function(newValue){
-				$('#prusaslicer_state_thumbnail').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'})
+				$('#prusaslicer_state_thumbnail').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'});
+
 			});
 
 			// observe alignment changes
@@ -168,7 +171,8 @@ $(function() {
 				    $('#prusaslicer_state_thumbnail').remove();
                 }
 			});
-		}
+		};
+
 	}
 
 	OCTOPRINT_VIEWMODELS.push({
