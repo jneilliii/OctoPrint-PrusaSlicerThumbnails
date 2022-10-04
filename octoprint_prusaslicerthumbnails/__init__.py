@@ -68,6 +68,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		regex = r"(?:^; thumbnail begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
 		regex_mks = re.compile('(?:;(?:simage|;gimage):).*?M10086 ;[\r\n]', re.DOTALL)
 		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
+		regex_luban = re.compile(';thumbnail: data:image/png;base64,(.*)[\r\n]', re.DOTALL)
 		lineNum = 0
 		collectedString = ""
 		use_mks = False
@@ -90,11 +91,17 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		if len(matches) == 0:  # MKS lottmaxx fallback
 			matches = regex_mks.findall(test_str)
 			if len(matches) > 0:
+				self._logger.debug("Found mks thumbnail.")
 				use_mks = True
 		if len(matches) == 0:  # Weedo fallback
 			matches = regex_weedo.findall(test_str)
 			if len(matches) > 0:
+				self._logger.debug("Found weedo thumbnail.")
 				use_weedo = True
+		if len(matches) == 0:  # luban fallback
+			matches = regex_luban.findall(test_str)
+			if len(matches) > 0:
+				self._logger.debug("Found luban thumbnail.")
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
