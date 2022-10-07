@@ -69,10 +69,12 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		regex_mks = re.compile('(?:;(?:simage|;gimage):).*?M10086 ;[\r\n]', re.DOTALL)
 		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
 		regex_luban = re.compile(';thumbnail: data:image/png;base64,(.*)[\r\n]', re.DOTALL)
+		regex_qidi = re.compile('M4010.*\'(.*)\'', re.DOTALL)
 		lineNum = 0
 		collectedString = ""
 		use_mks = False
 		use_weedo = False
+		use_qidi = False
 		with open(gcode_filename, "rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
@@ -102,6 +104,11 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			matches = regex_luban.findall(test_str)
 			if len(matches) > 0:
 				self._logger.debug("Found luban thumbnail.")
+		if len(matches) == 0:  # Qidi fallback
+			matches = regex_qidi.findall(test_str)
+			if len(matches) > 0:
+				self._logger.debug("Found qidi thumbnail.")
+				use_qidi = True
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
@@ -118,8 +125,16 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					png_file.write(self._extract_mks_thumbnail(matches))
 				elif use_weedo:
 					png_file.write(self._extract_weedo_thumbnail(matches))
+				elif use_qidi:
+					self._logger.debug(matches)
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
+
+	# Extracts a thumbnail from hex binary data usd by Qidi slicer
+	def _extract_qidi_thumbnail(self, gcode_encoded_images):
+		encoded_image = gcode_encoded_images[0].replace('W220 ', '').replace('\n', '').replace('\r', '').replace(' ', '')
+		encoded_image = bytes(bytearray.fromhex(encoded_image))
+		return encoded_image
 
 	# Extracts a thumbnail from hex binary data usd by Weedo printers
 	def _extract_weedo_thumbnail(self, gcode_encoded_images):
