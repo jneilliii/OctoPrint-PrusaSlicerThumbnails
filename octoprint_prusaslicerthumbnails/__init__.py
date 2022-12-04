@@ -50,7 +50,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				'inline_thumbnail_scale_value': "50", 'inline_thumbnail_position_left': False,
 				'align_inline_thumbnail': False, 'inline_thumbnail_align_value': "left", 'state_panel_thumbnail': True,
 				'state_panel_thumbnail_scale_value': "100", 'resize_filelist': False, 'filelist_height': "306",
-				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False}
+				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False, 'use_uploads_folder': False}
 
 	# ~~ AssetPlugin mixin
 
@@ -205,7 +205,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			"type"] and payload.get("name", False):
 			thumbnail_name = self.regex_extension.sub(".png", payload["name"])
 			thumbnail_path = self.regex_extension.sub(".png", payload["path"])
-			thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
+			if not self._settings.get_boolean(["use_uploads_folder"]):
+				thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
+			else:
+				thumbnail_filename = self._file_manager.path_on_disk("local", thumbnail_path)
 
 			if os.path.exists(thumbnail_filename):
 				os.remove(thumbnail_filename)
@@ -213,12 +216,12 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(
-						thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail",
-															   thumbnail_url.replace("//", "/"), overwrite=True)
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src",
-															   self._identifier, overwrite=True)
+					if not self._settings.get_boolean(["use_uploads_folder"]):
+						thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
+					else:
+						thumbnail_url = "downloads/files/local/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
 	# ~~ SimpleApiPlugin mixin
 
