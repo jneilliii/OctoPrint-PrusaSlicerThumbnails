@@ -70,11 +70,13 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
 		regex_luban = re.compile(';thumbnail: data:image/png;base64,(.*)[\r\n]', re.DOTALL)
 		regex_qidi = re.compile('M4010.*\'(.*)\'', re.DOTALL)
+		regex_creality = r"(?:^; jpg begin .*)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; jpg end)"
 		lineNum = 0
 		collectedString = ""
 		use_mks = False
 		use_weedo = False
 		use_qidi = False
+		use_creality = False
 		with open(gcode_filename, "rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
@@ -109,6 +111,11 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			if len(matches) > 0:
 				self._logger.debug("Found qidi thumbnail.")
 				use_qidi = True
+		if len(matches) == 0:  # Creality Neo fallback
+			matches = re.findall(regex_creality, test_str, re.MULTILINE)
+			if len(matches) > 0:
+				self._logger.debug("Found creality thumbnail.")
+				use_creality = True
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
@@ -125,6 +132,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					png_file.write(self._extract_mks_thumbnail(matches))
 				elif use_weedo:
 					png_file.write(self._extract_weedo_thumbnail(matches))
+				elif use_creality:
+					png_file.write(self._extract_creality_thumbnail(matches[choosen]))
 				elif use_qidi:
 					self._logger.debug(matches)
 				else:
@@ -160,7 +169,16 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 
 		# Load pixel data
 		image = Image.frombytes('RGB', encoded_image_dimensions, encoded_image, 'raw', 'BGR;16', 0, 1)
+		return self._imageToPng(image)
 
+	# Extracts a thumbnail from hex binary data usd by Qidi slicer
+	def _extract_creality_thumbnail(self, match):
+		encoded_jpg = base64.b64decode(match.replace("; ", "").encode())
+		with io.BytesIO(encoded_jpg) as jpg_bytes:
+			image = Image.open(jpg_bytes)
+			return self._imageToPng(image)
+
+	def _imageToPng(self, image):
 		# Save image as png
 		with io.BytesIO() as png_bytes:
 			image.save(png_bytes, "PNG")
