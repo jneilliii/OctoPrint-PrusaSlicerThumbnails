@@ -65,7 +65,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		]
 
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
-		regex = r"(?:^; thumbnail begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
+		regex = r"(?:^; thumbnail(?:_JPG)* begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail(?:_JPG)* end)"
 		regex_mks = re.compile('(?:;(?:simage|;gimage):).*?M10086 ;[\r\n]', re.DOTALL)
 		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
 		regex_luban = re.compile(';thumbnail: data:image/png;base64,(.*)[\r\n]', re.DOTALL)
