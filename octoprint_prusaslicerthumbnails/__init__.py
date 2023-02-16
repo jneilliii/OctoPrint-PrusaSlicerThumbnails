@@ -148,11 +148,9 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		encoded_image = gcode_encoded_images[0]
 		
 		image = Image.open(io.BytesIO(encoded_image)).resize((160,120))
-    
-        with io.BytesIO() as png_bytes:
-            image.save(png_bytes, "PNG")
-            png_bytes_string = png_bytes.getvalue()
-	
+		with io.BytesIO() as png_bytes:
+			image.save(png_bytes, "PNG")
+			png_bytes_string = png_bytes.getvalue()
 		return png_bytes_string
 
 	# Extracts a thumbnail from hex binary data usd by Qidi slicer
