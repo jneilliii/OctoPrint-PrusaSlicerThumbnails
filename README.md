@@ -2,7 +2,7 @@
 
 ![GitHub Downloads](https://badgen.net/github/assets-dl/jneilliii/OctoPrint-PrusaSlicerThumbnails/)
 
-This plugin will extract embedded thumbnails from gcode files created from [PrusaSlicer](#PrusaSlicer), [SuperSlicer](#SuperSlicer), [Cura](#Cura), or [Simplify3D](#Simplify3D).
+This plugin will extract embedded thumbnails from gcode files created from [PrusaSlicer](#PrusaSlicer), [SuperSlicer](#SuperSlicer), [Cura](#Cura), [Simplify3D](#Simplify3D) or FlashPrint (FlashForge printers).
 
 The preview thumbnail can be shown in OctoPrint from the files list by clicking the newly added image button.
 
