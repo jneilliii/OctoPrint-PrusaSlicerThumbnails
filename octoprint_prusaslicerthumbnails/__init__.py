@@ -143,14 +143,18 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					png_file.write(self._extract_flashprint_thumbnail(matches))
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
-		else:
 
 	# Extracts a thumbnail from hex binary data usd by FlashPrint slicer
 	def _extract_flashprint_thumbnail(self, gcode_encoded_images):
 		encoded_image = gcode_encoded_images[0]
-		#encoded_image = bytes(bytearray.fromhex(encoded_image))
-		return encoded_image
-
+		
+		image = Image.open(io.BytesIO(encoded_image)).resize((160,120))
+    
+        with io.BytesIO() as png_bytes:
+            image.save(png_bytes, "PNG")
+            png_bytes_string = png_bytes.getvalue()
+	
+		return png_bytes_string
 
 	# Extracts a thumbnail from hex binary data usd by Qidi slicer
 	def _extract_qidi_thumbnail(self, gcode_encoded_images):
