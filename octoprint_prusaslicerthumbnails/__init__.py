@@ -13,7 +13,6 @@ import io
 from PIL import Image
 import re
 import base64
-import tempfile
 import imghdr
 
 from flask_babel import gettext
