@@ -13,6 +13,7 @@ import io
 from PIL import Image
 import re
 import base64
+import imghdr
 
 from flask_babel import gettext
 from octoprint.access import ADMIN_GROUP
@@ -50,7 +51,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				'inline_thumbnail_scale_value': "50", 'inline_thumbnail_position_left': False,
 				'align_inline_thumbnail': False, 'inline_thumbnail_align_value': "left", 'state_panel_thumbnail': True,
 				'state_panel_thumbnail_scale_value': "100", 'resize_filelist': False, 'filelist_height': "306",
-				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False}
+				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False, 'use_uploads_folder': False}
 
 	# ~~ AssetPlugin mixin
 
@@ -65,16 +66,19 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		]
 
 	def _extract_thumbnail(self, gcode_filename, thumbnail_filename):
-		regex = r"(?:^; thumbnail begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail end)"
+		regex = r"(?:^; thumbnail(?:_JPG)* begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail(?:_JPG)* end)"
 		regex_mks = re.compile('(?:;(?:simage|;gimage):).*?M10086 ;[\r\n]', re.DOTALL)
 		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
 		regex_luban = re.compile(';thumbnail: data:image/png;base64,(.*)[\r\n]', re.DOTALL)
 		regex_qidi = re.compile('M4010.*\'(.*)\'', re.DOTALL)
+		regex_creality = r"(?:^; jpg begin .*)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; jpg end)"
 		lineNum = 0
 		collectedString = ""
 		use_mks = False
 		use_weedo = False
 		use_qidi = False
+		use_creality = False
+		use_flashprint = False		
 		with open(gcode_filename, "rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
@@ -109,6 +113,19 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			if len(matches) > 0:
 				self._logger.debug("Found qidi thumbnail.")
 				use_qidi = True
+		if len(matches) == 0:  # Creality Neo fallback
+			matches = re.findall(regex_creality, test_str, re.MULTILINE)
+			if len(matches) > 0:
+				self._logger.debug("Found creality thumbnail.")
+				use_creality = True
+		if len(matches) == 0:  # FlashPrint fallback
+			with open(gcode_filename, "rb") as gcode_file:
+				gcode_file.seek(58)
+				thumbbytes = gcode_file.read(14454)
+				if imghdr.what(file=None, h=thumbbytes) == 'bmp':	
+					self._logger.debug("Found flashprint thumbnail.")
+					matches = [thumbbytes]
+					use_flashprint = True
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
@@ -125,10 +142,24 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					png_file.write(self._extract_mks_thumbnail(matches))
 				elif use_weedo:
 					png_file.write(self._extract_weedo_thumbnail(matches))
+				elif use_creality:
+					png_file.write(self._extract_creality_thumbnail(matches[choosen]))
 				elif use_qidi:
 					self._logger.debug(matches)
+				elif use_flashprint:
+					png_file.write(self._extract_flashprint_thumbnail(matches))
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
+
+	# Extracts a thumbnail from hex binary data usd by FlashPrint slicer
+	def _extract_flashprint_thumbnail(self, gcode_encoded_images):
+		encoded_image = gcode_encoded_images[0]
+		
+		image = Image.open(io.BytesIO(encoded_image)).resize((160,120))
+		with io.BytesIO() as png_bytes:
+			image.save(png_bytes, "PNG")
+			png_bytes_string = png_bytes.getvalue()
+		return png_bytes_string
 
 	# Extracts a thumbnail from hex binary data usd by Qidi slicer
 	def _extract_qidi_thumbnail(self, gcode_encoded_images):
@@ -160,7 +191,16 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 
 		# Load pixel data
 		image = Image.frombytes('RGB', encoded_image_dimensions, encoded_image, 'raw', 'BGR;16', 0, 1)
+		return self._imageToPng(image)
 
+	# Extracts a thumbnail from hex binary data usd by Qidi slicer
+	def _extract_creality_thumbnail(self, match):
+		encoded_jpg = base64.b64decode(match.replace("; ", "").encode())
+		with io.BytesIO(encoded_jpg) as jpg_bytes:
+			image = Image.open(jpg_bytes)
+			return self._imageToPng(image)
+
+	def _imageToPng(self, image):
 		# Save image as png
 		with io.BytesIO() as png_bytes:
 			image.save(png_bytes, "PNG")
@@ -205,7 +245,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			"type"] and payload.get("name", False):
 			thumbnail_name = self.regex_extension.sub(".png", payload["name"])
 			thumbnail_path = self.regex_extension.sub(".png", payload["path"])
-			thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
+			if not self._settings.get_boolean(["use_uploads_folder"]):
+				thumbnail_filename = "{}/{}".format(self.get_plugin_data_folder(), thumbnail_path)
+			else:
+				thumbnail_filename = self._file_manager.path_on_disk("local", thumbnail_path)
 
 			if os.path.exists(thumbnail_filename):
 				os.remove(thumbnail_filename)
@@ -213,12 +256,12 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(
-						thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail",
-															   thumbnail_url.replace("//", "/"), overwrite=True)
-					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src",
-															   self._identifier, overwrite=True)
+					if not self._settings.get_boolean(["use_uploads_folder"]):
+						thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
+					else:
+						thumbnail_url = "downloads/files/local/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
+					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
 	# ~~ SimpleApiPlugin mixin
 
