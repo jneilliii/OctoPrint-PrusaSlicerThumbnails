@@ -13,6 +13,8 @@ import io
 from PIL import Image
 import re
 import base64
+import tempfile
+import imghdr
 
 from flask_babel import gettext
 from octoprint.access import ADMIN_GROUP
@@ -75,6 +77,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		use_mks = False
 		use_weedo = False
 		use_qidi = False
+		use_flashprint = False
 		with open(gcode_filename, "rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
@@ -109,6 +112,15 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			if len(matches) > 0:
 				self._logger.debug("Found qidi thumbnail.")
 				use_qidi = True
+		if len(matches) == 0:  # FlashPrint fallback
+			with open(gcode_filename, "rb") as gcode_file:
+				fp.seek(58)
+				thumbbytes = fp.read(14454)
+				if imghdr.what(file=None, h=thumbbytes) == 'bmp':	
+					self._logger.debug("Found flashprint thumbnail.")
+					matches = [thumbbytes]
+					use_flashprint = True
+
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
@@ -127,8 +139,18 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					png_file.write(self._extract_weedo_thumbnail(matches))
 				elif use_qidi:
 					self._logger.debug(matches)
+				elif use_flashprint:
+					png_file.write(self._extract_flashprint_thumbnail(matches))
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
+		else:
+
+	# Extracts a thumbnail from hex binary data usd by FlashPrint slicer
+	def _extract_flashprint_thumbnail(self, gcode_encoded_images):
+		encoded_image = gcode_encoded_images[0]
+		#encoded_image = bytes(bytearray.fromhex(encoded_image))
+		return encoded_image
+
 
 	# Extracts a thumbnail from hex binary data usd by Qidi slicer
 	def _extract_qidi_thumbnail(self, gcode_encoded_images):
