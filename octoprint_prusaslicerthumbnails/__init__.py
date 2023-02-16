@@ -114,8 +114,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				use_qidi = True
 		if len(matches) == 0:  # FlashPrint fallback
 			with open(gcode_filename, "rb") as gcode_file:
-				fp.seek(58)
-				thumbbytes = fp.read(14454)
+				gcode_file.seek(58)
+				thumbbytes = gcode_file.read(14454)
 				if imghdr.what(file=None, h=thumbbytes) == 'bmp':	
 					self._logger.debug("Found flashprint thumbnail.")
 					matches = [thumbbytes]
