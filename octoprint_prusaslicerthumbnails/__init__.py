@@ -156,8 +156,21 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		encoded_image = gcode_encoded_images[0]
 		
 		image = Image.open(io.BytesIO(encoded_image)).resize((160,120))
+		rgba = image.convert("RGBA")
+		pixels = rgba.getdata()
+		newData = []
+
+		alphamaxvalue = 35
+		for pixel in pixels:
+			if pixel[0] >= 0 and pixel[0] <= alphamaxvalue and pixel[1] >= 0 and  pixel[1] <= alphamaxvalue  and pixel[2] >= 0 and pixel[2] <= alphamaxvalue :  # finding black colour by its RGB value
+				newData.append((255, 255, 255, 0))	# storing a transparent value when we find a black/dark colour
+			else:
+				newData.append(pixel)  # other colours remain unchanged
+
+		rgba.putdata(newData)
+
 		with io.BytesIO() as png_bytes:
-			image.save(png_bytes, "PNG")
+			rgba.save(png_bytes, "PNG")
 			png_bytes_string = png_bytes.getvalue()
 		return png_bytes_string
 
