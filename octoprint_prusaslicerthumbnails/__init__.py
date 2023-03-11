@@ -314,7 +314,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	def scan_files(self):
 		self._logger.debug("Crawling Files")
 		file_list = self._file_manager.list_files(recursive=True)
-		self._logger.info(file_list)
+		self._logger.debug(file_list)
 		local_files = file_list["local"]
 		results = dict(no_thumbnail=[], no_thumbnail_src=[])
 		for key, file in local_files.items():
