@@ -42,6 +42,13 @@ A post-processing script has been bundled since version 4.9. For older versions 
 
 ### Simplify3D
 
+**Simplify3D 5.1**
+
+Now integrated as an option in newer versions of Simplify3D
+![Simplify3D](screenshot_simplify3d.png)
+
+**Older versions**
+
 Available as a post-processing script for [windows](https://github.com/boweeble/s3d-thumbnail-generator),  [linux](https://github.com/NotExpectedYet/s3d-thumbnail-generator), or [macos](https://github.com/idcrook/s3d-thumbnail-generator-macos) thanks to [@boweeble](https://github.com/boweeble/), [@NotExpectedYet](https://github.com/NotExpectedYet/), and [@idcrook](https://github.com/idcrook/).
 
 Alernatively there is another solution that utilizes OpenSCAD to geerate the thumbnail thanks to [@fabiorinaldus399](https://github.com/fabiorinaldus399/) that can be found [here](https://github.com/fabiorinaldus399/gcode-tumbnail-generator-for-Simplify3D).
