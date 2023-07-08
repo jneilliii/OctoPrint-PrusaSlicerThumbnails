@@ -18,7 +18,6 @@ $(function() {
 		self.file_details = ko.observable();
 		self.crawling_files = ko.observable(false);
 		self.crawl_results = ko.observableArray([]);
-        self.progress_bar_moved = false;
 
 		self.filesViewModel.prusaslicerthumbnails_open_thumbnail = function(data) {
 			if(data.thumbnail_src === "prusaslicerthumbnails"){
@@ -120,7 +119,9 @@ $(function() {
 			});
 			self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value.subscribe(function(newValue){
 				$('#prusaslicer_state_thumbnail').attr({'width': self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%'});
-
+                if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() !== 100) {
+                    $('#prusaslicer_state_thumbnail').addClass('pull-left').next('hr').remove();
+                }
 			});
 
 			// observe alignment changes
@@ -157,11 +158,13 @@ $(function() {
 										$('#prusaslicer_state_thumbnail').attr('src', file_data.thumbnail);
 									} else {
 									    $('#state > div > hr:first').after('<img id="prusaslicer_state_thumbnail" class="pull-left" src="'+file_data.thumbnail+'" width="' + self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%"/>');
+                                        if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() == 100) {
+                                            $('#prusaslicer_state_thumbnail').removeClass('pull-left').after('<hr>');
+                                        }
+                                        if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.relocate_progress()) {
+                                            $('#state > div > div.progress.progress-text-centered').css({'margin-bottom': 'inherit'}).insertBefore('#prusaslicer_state_thumbnail').after('<hr>');
+                                        }
 									}
-                                    if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.relocate_progress() && !self.progress_bar_moved) {
-                                        $('#state > div > div.progress.progress-text-centered').css({'margin-bottom': 'inherit'}).insertBefore('#prusaslicer_state_thumbnail').after('<hr>');
-                                        self.progress_bar_moved = true;
-                                    }
 								} else {
 									$('#prusaslicer_state_thumbnail').remove();
 								}
