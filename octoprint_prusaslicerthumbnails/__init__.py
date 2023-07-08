@@ -51,7 +51,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				'inline_thumbnail_scale_value': "50", 'inline_thumbnail_position_left': False,
 				'align_inline_thumbnail': False, 'inline_thumbnail_align_value': "left", 'state_panel_thumbnail': True,
 				'state_panel_thumbnail_scale_value': "100", 'resize_filelist': False, 'filelist_height': "306",
-				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False, 'use_uploads_folder': False}
+				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False, 'use_uploads_folder': False,
+				'relocate_progress': False}
 
 	# ~~ AssetPlugin mixin
 
@@ -91,8 +92,8 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				if line.startswith(";") or line.startswith("\n") or line.startswith("M10086 ;") or line[0:4] in ["W220", "W221", "W222"]:
 					collectedString += line
 			self._logger.debug(collectedString)
-			test_str = collectedString.replace(octoprint.util.to_native_str('\r\n'), octoprint.util.to_native_str('\n'))
-		test_str = test_str.replace(octoprint.util.to_native_str(';\n;\n'), octoprint.util.to_native_str(';\n\n;\n'))
+			test_str = collectedString.replace(octoprint.util.to_unicode('\r\n'), octoprint.util.to_unicode('\n'))
+		test_str = test_str.replace(octoprint.util.to_unicode(';\n;\n'), octoprint.util.to_unicode(';\n\n;\n'))
 		matches = re.findall(regex, test_str, re.MULTILINE)
 		if len(matches) == 0:  # MKS lottmaxx fallback
 			matches = regex_mks.findall(test_str)
@@ -117,10 +118,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			with open(gcode_filename, "rb") as gcode_file:
 				gcode_file.seek(58)
 				thumbbytes = gcode_file.read(14454)
-				if imghdr.what(file=None, h=thumbbytes) == 'bmp':	
+				if imghdr.what(file=None, h=thumbbytes) == 'bmp':
 					self._logger.debug("Found flashprint thumbnail.")
 					matches = [thumbbytes]
-					use_flashprint = True				
+					use_flashprint = True
 		if len(matches) == 0:  # Creality Neo fallback
 			matches = re.findall(regex_creality, test_str, re.MULTILINE)
 			if len(matches) > 0:
@@ -147,14 +148,14 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				elif use_qidi:
 					self._logger.debug(matches)
 				elif use_flashprint:
-					png_file.write(self._extract_flashprint_thumbnail(matches))					
+					png_file.write(self._extract_flashprint_thumbnail(matches))
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
 
 	# Extracts a thumbnail from hex binary data usd by FlashPrint slicer
 	def _extract_flashprint_thumbnail(self, gcode_encoded_images):
 		encoded_image = gcode_encoded_images[0]
-		
+
 		image = Image.open(io.BytesIO(encoded_image)).resize((160,120))
 		rgba = image.convert("RGBA")
 		pixels = rgba.getdata()
@@ -269,10 +270,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				gcode_filename = self._file_manager.path_on_disk("local", payload["path"])
 				self._extract_thumbnail(gcode_filename, thumbnail_filename)
 				if os.path.exists(thumbnail_filename):
-					if not self._settings.get_boolean(["use_uploads_folder"]):
-						thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
-					else:
-						thumbnail_url = "downloads/files/local/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
+					thumbnail_url = "plugin/prusaslicerthumbnails/thumbnail/{}?{:%Y%m%d%H%M%S}".format(thumbnail_path.replace(thumbnail_name, quote(thumbnail_name)), datetime.datetime.now())
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail", thumbnail_url.replace("//", "/"), overwrite=True)
 					self._file_manager.set_additional_metadata("local", payload["path"], "thumbnail_src", self._identifier, overwrite=True)
 
@@ -334,9 +332,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 	def route_hook(self, server_routes, *args, **kwargs):
 		from octoprint.server.util.tornado import LargeResponseHandler, path_validation_factory
 		from octoprint.util import is_hidden_path
+		thumbnail_root_path = self._file_manager.path_on_disk("local", "") if self._settings.get_boolean(["use_uploads_folder"]) else self.get_plugin_data_folder()
 		return [
 			(r"thumbnail/(.*)", LargeResponseHandler,
-			 {'path': self.get_plugin_data_folder(), 'as_attachment': False, 'path_validation': path_validation_factory(
+			 {'path': thumbnail_root_path, 'as_attachment': False, 'path_validation': path_validation_factory(
 				 lambda path: not is_hidden_path(path), status_code=404)})
 		]
 
