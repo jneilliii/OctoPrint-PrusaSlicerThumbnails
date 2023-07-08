@@ -13,6 +13,11 @@
 	</div>
 	<div class="controls">
 		<label class="checkbox">
+		<input type="checkbox" data-bind="enable:settings.plugins.prusaslicerthumbnails.state_panel_thumbnail() == true, checked: settings.plugins.prusaslicerthumbnails.relocate_progress"> Relocate progress bar above thumbnail (requires browser refresh).
+		</label>
+	</div>
+	<div class="controls">
+		<label class="checkbox">
 		<input type="checkbox" data-bind="checked: settings.plugins.prusaslicerthumbnails.inline_thumbnail"> Use inline thumbnails.
 		</label>
 	</div>
