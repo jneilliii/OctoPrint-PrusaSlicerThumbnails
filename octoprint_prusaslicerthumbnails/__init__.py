@@ -73,6 +73,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		regex_luban = re.compile(';thumbnail: data:image/png;base64,(.*)[\r\n]', re.DOTALL)
 		regex_qidi = re.compile('M4010.*\'(.*)\'', re.DOTALL)
 		regex_creality = r"(?:^; jpg begin .*)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; jpg end)"
+		regex_buddy = r"(?:^; thumbnail(?:_QOI)* begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail(?:_QOI)* end)"
 		lineNum = 0
 		collectedString = ""
 		use_mks = False
@@ -80,6 +81,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		use_qidi = False
 		use_flashprint = False
 		use_creality = False
+		use_buddy = False
 		with open(gcode_filename, "rb") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
@@ -127,6 +129,11 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 			if len(matches) > 0:
 				self._logger.debug("Found creality thumbnail.")
 				use_creality = True
+		if len(matches) == 0: # Prusa buddy fallback
+			matches = re.findall(regex_buddy, test_str, re.MULTILINE)
+			if len(matches) > 0:
+				self._logger.debug("Found Prusa Buddy QOI thumbnail.")
+				use_buddy = True
 		if len(matches) > 0:
 			maxlen=0
 			choosen=-1
@@ -149,8 +156,16 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 					self._logger.debug(matches)
 				elif use_flashprint:
 					png_file.write(self._extract_flashprint_thumbnail(matches))
+				elif use_buddy:
+					png_file.write(self._extract_buddy_thumbnail(matches[choosen].replace("; ", "")))
 				else:
 					png_file.write(base64.b64decode(matches[choosen].replace("; ", "").encode()))
+
+	# Extracts a thumbnail from QOI embedded image in new Prusa Firmware
+	def _extract_buddy_thumbnail(self, match):
+		encoded_image = base64.b64decode(match)
+		image = Image.open(io.BytesIO(encoded_image), formats=["QOI"])
+		return self._imageToPng(image)
 
 	# Extracts a thumbnail from hex binary data usd by FlashPrint slicer
 	def _extract_flashprint_thumbnail(self, gcode_encoded_images):
