@@ -159,7 +159,7 @@ $(function() {
 									} else {
 									    $('#state > div > hr:first').after('<img id="prusaslicer_state_thumbnail" class="pull-left" src="'+file_data.thumbnail+'" width="' + self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() + '%"/>');
                                         if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() == 100) {
-                                            $('#prusaslicer_state_thumbnail').removeClass('pull-left').after('<hr>');
+                                            $('#prusaslicer_state_thumbnail').removeClass('pull-left').after('<hr id="prusaslicer_state_hr">');
                                         }
                                         if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.relocate_progress()) {
                                             $('#state > div > div.progress.progress-text-centered').css({'margin-bottom': 'inherit'}).insertBefore('#prusaslicer_state_thumbnail').after('<hr>');
@@ -177,6 +177,9 @@ $(function() {
 						});
 				} else {
 				    $('#prusaslicer_state_thumbnail').remove();
+					if(self.settingsViewModel.settings.plugins.prusaslicerthumbnails.state_panel_thumbnail_scale_value() == 100) {
+						$('#prusaslicer_state_hr').remove();
+					}
                 }
 			});
 		};
