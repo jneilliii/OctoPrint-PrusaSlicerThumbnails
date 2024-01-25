@@ -385,6 +385,13 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				{'name': "Release Candidate", 'branch': "rc", 'comittish': ["rc", "master"]}
 			], 'pip': "https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/{target_version}.zip"}}
 
+	# ~~ Backup hook
+
+	def additional_backup_excludes(self, excludes, *args, **kwargs):
+		if "uploads" in excludes:
+			return ["."]
+		return []
+
 
 __plugin_name__ = "Slicer Thumbnails"
 __plugin_pythoncompat__ = ">=2.7,<4"  # python 2 and 3
@@ -401,4 +408,5 @@ def __plugin_load__():
 		"octoprint.server.http.routes": __plugin_implementation__.route_hook,
 		"octoprint.server.api.before_request": __plugin_implementation__.hook_octoprint_server_api_before_request,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+		"octoprint.plugin.backup.additional_excludes": __plugin_implementation__.additional_backup_excludes,
 	}
