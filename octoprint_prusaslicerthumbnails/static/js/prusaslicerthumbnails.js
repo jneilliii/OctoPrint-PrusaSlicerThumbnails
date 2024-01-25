@@ -149,7 +149,7 @@ $(function() {
 			});
 
 			self.printerStateViewModel.dateString.subscribe(function(data){
-				if(data){
+				if(data && data != "unknown"){
 					OctoPrint.files.get('local',self.printerStateViewModel.filepath())
 						.done(function(file_data){
 							if(file_data){
