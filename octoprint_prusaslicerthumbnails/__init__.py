@@ -82,10 +82,10 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		use_flashprint = False
 		use_creality = False
 		use_buddy = False
-		with open(gcode_filename, "rb") as gcode_file:
+
+		with open(gcode_filename, "r", encoding="utf8", errors="ignore") as gcode_file:
 			for line in gcode_file:
 				lineNum += 1
-				line = line.decode("utf-8", "ignore")
 				gcode = octoprint.util.comm.gcode_command_for_cmd(line)
 				extrusion_match = octoprint.util.comm.regexes_parameters["floatE"].search(line)
 				if gcode == "G1" and extrusion_match:
