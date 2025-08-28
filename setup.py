@@ -14,7 +14,7 @@ plugin_package = "octoprint_prusaslicerthumbnails"
 plugin_name = "Slicer Thumbnails"
 
 # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
-plugin_version = "1.0.8"
+plugin_version = "1.0.9rc1"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
@@ -33,7 +33,7 @@ plugin_url = "https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails"
 plugin_license = "AGPLv3"
 
 # Any additional requirements besides OctoPrint should be listed here
-plugin_requires = ["Pillow>=9.5.0"]
+plugin_requires = ["Pillow>=9.5.0", "standard-imghdr; python_version >= '3.13'"]
 
 ### --------------------------------------------------------------------------------------------------------------------
 ### More advanced options that you usually shouldn't have to touch follow after this point
