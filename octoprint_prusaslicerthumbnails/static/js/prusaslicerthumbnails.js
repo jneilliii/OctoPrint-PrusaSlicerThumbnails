@@ -11,6 +11,7 @@ $(function() {
 		self.settingsViewModel = parameters[0];
 		self.filesViewModel = parameters[1];
 		self.printerStateViewModel = parameters[2];
+		self.uploadmanagerViewModel = parameters[3];
 
 		self.thumbnail_url = ko.observable('/static/img/tentacle-20x20.png');
 		self.thumbnail_title = ko.observable('');
@@ -68,7 +69,7 @@ $(function() {
 		self.onBeforeBinding = function() {
 		    // inject filelist thumbnail into template
 
-      let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
+            let regex = /<div class="btn-group action-buttons">([\s\S]*)<.div>/mi;
 			let template = '<div class="btn btn-mini" data-bind="click: function() { if ($root.loginState.isUser()) { $root.prusaslicerthumbnails_open_thumbnail($data) } else { return; } }, visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settingsViewModel.settings.plugins.prusaslicerthumbnails.inline_thumbnail() == false)" title="Show Thumbnail" style="display: none;"><i class="fa fa-image"></i></div>';
 
 			let inline_thumbnail_template = '<div class="inline_prusa_thumbnail" ' +
@@ -79,12 +80,27 @@ $(function() {
                                             'style: {\'width\': (!$root.thumbnailPositionLeft()) ? $root.thumbnailScaleValue() : \'100%\' }" ' +
 			                                'style="display: none;"/></div>';
 
-
 			$("#files_template_machinecode").text(function () {
 				var return_value = inline_thumbnail_template + $(this).text();
 				return_value = return_value.replace(regex, '<div class="btn-group action-buttons">$1	' + template + '></div>');
 				return return_value;
 			});
+
+            // new upload manager injection if inline thumbnails is enabled.
+            if(self.uploadmanagerViewModel) {
+                $("#uploadmanager_template_machinecode").text(function () {
+                    let uploadmanager_thumbnail_template = '<i class="fa-regular fa-file-lines" data-bind="visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settings.settings.plugins.prusaslicerthumbnails.inline_thumbnail_uploadmanager() == false)"></i><div class="inline_prusa_thumbnail" ' +
+                                                'data-bind="if: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settings.settings.plugins.prusaslicerthumbnails.inline_thumbnail_uploadmanager() == true)">' +
+                                                '<img data-bind="attr: {src: $data.thumbnail}, ' +
+                                                'visible: ($data.thumbnail_src == \'prusaslicerthumbnails\' && $root.settings.settings.plugins.prusaslicerthumbnails.inline_thumbnail_uploadmanager() == true), ' +
+                                                'click: function() { if ($root.loginState.isUser() && !($(\'html\').attr(\'id\') === \'touch\')) { $root.files.prusaslicerthumbnails_open_thumbnail($data) } else { return; } },' +
+                                                'style="display: none;"/></div>';
+                    let regex_uploadmanager = /<i class="fa-regular fa-file-lines"><\/i>/mi;
+                    var return_value = $(this).text();
+                    return_value = return_value.replace(regex_uploadmanager, '' + uploadmanager_thumbnail_template);
+                    return return_value;
+                });
+            }
 
 			// assign initial scaling
 			if (self.settingsViewModel.settings.plugins.prusaslicerthumbnails.scale_inline_thumbnail()==true){
@@ -188,7 +204,8 @@ $(function() {
 
 	OCTOPRINT_VIEWMODELS.push({
 		construct: PrusaslicerthumbnailsViewModel,
-		dependencies: ['settingsViewModel', 'filesViewModel', 'printerStateViewModel'],
+		dependencies: ['settingsViewModel', 'filesViewModel', 'printerStateViewModel', 'uploadmanagerViewModel'],
+		optional: ['uploadmanagerViewModel'],
 		elements: ['div#prusa_thumbnail_viewer', '#crawl_files', '#crawl_files_results']
 	});
 });
