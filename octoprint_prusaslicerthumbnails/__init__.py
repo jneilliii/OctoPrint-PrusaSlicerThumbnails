@@ -345,13 +345,37 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 
 	# ~~ Routes hook
 	def route_hook(self, server_routes, *args, **kwargs):
-		from octoprint.server.util.tornado import LargeResponseHandler, path_validation_factory
+		from octoprint.server import app
+		from octoprint.server.util.flask import (
+			permission_validator,
+		)
+		from octoprint.server.util.tornado import (
+			LargeResponseHandler,
+			access_validation_factory,
+			path_validation_factory,
+		)
 		from octoprint.util import is_hidden_path
+
 		thumbnail_root_path = self._file_manager.path_on_disk("local", "") if self._settings.get_boolean(["use_uploads_folder"]) else self.get_plugin_data_folder()
+
 		return [
-			(r"thumbnail/(.*)", LargeResponseHandler,
-			 {'path': thumbnail_root_path, 'as_attachment': False, 'path_validation': path_validation_factory(
-				 lambda path: not is_hidden_path(path), status_code=404)})
+			(
+				r"thumbnail/(.*)",
+				LargeResponseHandler,
+				{
+					'path': thumbnail_root_path,
+					'as_attachment': False,
+					'path_validation': path_validation_factory(
+						lambda path: not is_hidden_path(path),
+						status_code=404
+					),
+					"access_validation": access_validation_factory(
+						app,
+						permission_validator,
+						Permissions.FILES_LIST,
+					),
+				}
+			)
 		]
 
 	# ~~ Server API Before Request Hook
