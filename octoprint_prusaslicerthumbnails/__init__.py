@@ -72,7 +72,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		regex_weedo = re.compile('W221[\r\n](.*)[\r\n]W222', re.DOTALL)
 		regex_luban = re.compile(';[Tt]humbnail: ?data:image/png;base64,(.*)[\r\n]', re.DOTALL)
 		regex_qidi = re.compile('M4010.*\'(.*)\'', re.DOTALL)
-		regex_creality = r"(?:^; jpg begin .*)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; jpg end)"
+		regex_creality = r"(?:^; (?:jpg|png) begin .*)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; (?:jpg|png) end)"
 		regex_buddy = r"(?:^; thumbnail(?:_QOI)* begin \d+[x ]\d+ \d+)(?:\n|\r\n?)((?:.+(?:\n|\r\n?))+?)(?:^; thumbnail(?:_QOI)* end)"
 		lineNum = 0
 		collectedString = ""
