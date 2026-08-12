@@ -42,7 +42,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 		self._folderRemovalLastAdded = {}
 		self._waitForAnalysis = False
 		self._analysis_active = False
-		self.regex_extension = re.compile("\.(?:gco(?:de)?|tft)$")
+		self.regex_extension = re.compile(r"\.(?:b?gco(?:de)?|tft)$")
 
 	# ~~ SettingsPlugin mixin
 
