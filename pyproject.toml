@@ -6,14 +6,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Slicer-Thumbnails"
-version = "1.2.3"
+version = "1.2.4"
 description = "Plugin that extracts thumbnails from uploaded gcode files sliced by PrusaSlicer."
 authors = [
     { name = "jneilliii", email = "jneilliii+github@gmail.com" },
 ]
 requires-python = ">=3.7,<4"
 dependencies = [
-    "Pillow>=9.5.0,<12.1.0",
+    "Pillow>=13.0.0",
     "standard-imghdr; python_version >= '3.13'",
 ]
 dynamic = [
